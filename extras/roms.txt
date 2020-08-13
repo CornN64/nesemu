@@ -1,0 +1,33 @@
+No.	Icon	Name	Filename
+1.	$	Super Mario Bros 1	smb1.nes
+2.	"	Super Mario Bros 3	smb3.nes
+3.	;	Tetris	tetris.nes
+4.	=	Legend of Zelda	zelda1.nes
+5.	+	Adventure of Link	zelda2.nes
+6.	}	Galaga	galaga.nes
+7.	;	Metroid	metroid.nes
+*#*
+NOTE: The rest of this file is ignored by the program
+2.	%	Super Mario Bros 2  smb2.nes
+7.	/	Contra  contra.nes
+10.	$	Castlevania cv1.nes
+11.	/	Simon's Quest   cv2.nes 
+12.	{	Bubble Bobble   bubble.nes
+
+#	The character delimiter of the table above is tab, NOT spaces.
+#	Don't erase this characters "*#*" or the emulator will definetly act up since that is the EOF marker.
+#
+#	You have the option to enable SD Card support (see the platformio.ini file) via "CONFIG_SD_CARD".
+#	If you define this variable then also assign the pins for the SPI bus as well. If you do not define this option
+#	it will default to SPIFFS on the SRAM, which requires re-flashing the partition to update the files.
+#	SD Card support, on the other hand, just requires putting the "roms.txt" file and roms in the root folder of the SD Card.
+#	It's also a lot faster.
+#
+#	Note the four tab-delimited columns.  All four should exist or the menu will not parse correctly.
+#	There should be a period after the number, followed by an icon character, name, and file name.
+#	The last column should match the ROM file name in the SPIFFS volume.
+#	The menu will display the Alphabet (A-z capital & lowercas)
+#	Numbers 0-9 and  ? ! . , ( ) -
+#	Icons: 	$ -> Mario		% -> Luigi		" -> MarioTanuki
+#		; -> Coin		} -> ?-Box		= -> Link1
+#		+ -> Link2		{ -> Pacman		/ -> Megaman
