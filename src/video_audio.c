@@ -39,8 +39,8 @@
 #include "Controller.h"
 #include "video_audio.h"
 
-#define AUDIO_SAMPLERATE 15734
-#define AUDIO_BUFFER_LENGTH 1024
+#define AUDIO_SAMPLERATE 15734*2
+#define AUDIO_BUFFER_LENGTH 64
 #define BITS_PER_SAMPLE 16
 // Always bits_per_sample / 8
 #define BYTES_PER_SAMPLE 2
@@ -76,20 +76,20 @@ static void do_audio_frame()
 		i2s_zero_dma_buffer(I2S_DEVICE_ID);
 		return;
 	}
-	//uint16_t *bufU = (uint16_t *)audio_buffer;
-	//int16_t *bufS = (int16_t *)audio_buffer;
+	uint16_t *bufU = (uint16_t *)audio_buffer;
+	int16_t *bufS = (int16_t *)audio_buffer;
 	int samplesRemaining = samplesPerPlayback;
-	//int volShift = 8 - getVolume() * 2;	
+	int volShift = 8 - getVolume() * 2;	
 	while (samplesRemaining)
 	{
 		int n = AUDIO_BUFFER_LENGTH > samplesRemaining ? samplesRemaining : AUDIO_BUFFER_LENGTH;
 		apu_process(audio_buffer, n);
 		//audio_callback(audio_buffer, n);  Why does this crash??
-		//for (int i=0; i < n; i++) {
-		//	int16_t sample = bufS[i];
-		//	uint16_t unsignedSample = sample ^ 0x8000;
-		//	bufU[i] = unsignedSample >> volShift;
-		//}
+		for (int i=0; i < n; i++) {
+			int16_t sample = bufS[i];
+			uint16_t unsignedSample = sample ^ 0x8000;
+			bufU[i] = unsignedSample >> volShift;
+		}
 		size_t written = -1;
 		i2s_write(I2S_DEVICE_ID, audio_buffer, BYTES_PER_SAMPLE * n, &written, portMAX_DELAY);
 		samplesRemaining -= n;
@@ -125,7 +125,7 @@ static int osd_init_sound(void)
 		.communication_format = I2S_COMM_FORMAT_I2S_MSB,
 		.intr_alloc_flags = ESP_INTR_FLAG_INTRDISABLED,
 		.dma_buf_count = 8,
-		.dma_buf_len = AUDIO_BUFFER_LENGTH,
+		.dma_buf_len = 64,
 		.use_apll = false};
 	i2s_driver_install(I2S_DEVICE_ID, &cfg, 0, NULL);
 	i2s_set_pin(I2S_DEVICE_ID, NULL);

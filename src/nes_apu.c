@@ -876,7 +876,6 @@ uint8 apu_read(uint32 address)
 void apu_process(void *buffer, int num_samples)
 {
    static int32 prev_sample = 0;
-
    int16 *buf16;
    uint8 *buf8;
 
@@ -887,8 +886,6 @@ void apu_process(void *buffer, int num_samples)
 
       buf16 = (int16 *) buffer;
       buf8 = (uint8 *) buffer;
-	  
-	  int volShift = 8 - getVolume() * 2;	//Scale sound by setting in ingame menu	
 
       while (num_samples--)
       {
@@ -927,10 +924,10 @@ void apu_process(void *buffer, int num_samples)
          CLIP_OUTPUT16(accum);
 
          /* signed 16-bit output, unsigned 8-bit */
-         //if (16 == apu.sample_bits)
-            *buf16++ = (int16) (((uint16)accum ^ 0x8000) >> volShift);
-         //else
-         //   *buf8++ = (accum >> 8) ^ 0x80;
+         if (16 == apu.sample_bits)
+            *buf16++ = (int16) accum;
+         else
+            *buf8++ = (accum >> 8) ^ 0x80;
       }
    }
 }
