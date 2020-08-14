@@ -1,4 +1,4 @@
-# **NESEMU:** emulates the NES game console on an ESP32 with 320x240 a LCD screen, audio output, controller input and SD card support
+# **NESEMU:** emulates the NES game console on an ESP32 with a 320x240 LCD screen, audio output, controller input and SD card support
 ## Supports classic NES/SNES/PSX controllers or raw GPIO buttons.
 
 ![NESEMU](extras/LCD.jpg)

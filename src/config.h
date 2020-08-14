@@ -34,7 +34,7 @@
 // If defined it will run the SPI transfer to the LCD as a task (and which CPU core 0 or 1 default)
 #define RUN_VIDEO_AS_TASK 1
 
-// If defined rotate display 180 deg (ToDo need to consolidate LCD init lists from menu.c and spi_lcd!!!)
+// If defined rotate display 180 deg
 #define ROTATE_LCD_180
 
 // Use DMA to transfer to screen if defined else use CPU (CPU is faster for now)

@@ -119,6 +119,8 @@ static void LCD_WriteData(const uint8_t data)
     spi_write_byte(data);
 }
 
+#if 0 /*INIT LCD*/
+
 static void ILI9341_INITIAL()
 {
 #if PIN_NUM_BCKL >= 0
@@ -434,6 +436,7 @@ static void spi_master_init()
         WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + (i << 2)), 0);
     }
 }
+#endif /*INIT LCD*/
 
 #define U16x2toU32(m, l) ((((uint32_t)(l >> 8 | (l & 0xFF) << 8)) << 16) | (m >> 8 | (m & 0xFF) << 8))
 #define U16xtoZ16(m) ((uint32_t)((m >> 8 | (m & 0xFF) << 8)))
@@ -656,11 +659,6 @@ void IRAM_ATTR ili9341_clr(void)
 	GPIO.out_w1ts = dc;
 	SET_PERI_REG_BITS(SPI_MOSI_DLEN_REG(SPI_NUM), SPI_USR_MOSI_DBITLEN, 511, SPI_USR_MOSI_DBITLEN_S);
 
-    for (i = 0; i < 16; i++)
-    {
-        WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + (i << 2)), 0);	//clear to black
-    }
-
 	for (y = 0; y < SCREEN_HEIGHT; y++)
     {
         x = 0;
@@ -668,7 +666,13 @@ void IRAM_ATTR ili9341_clr(void)
         {
             // Render 32 pixels, grouped as pairs of 16-bit pixels stored in 32-bit values
             x += 32;
+			
 			waitForSPIReady();
+			
+			for (i = 0; i < 16; i++)
+			{
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + (i << 2)), 0);	//clear to black
+			}
             SET_PERI_REG_MASK(SPI_CMD_REG(SPI_NUM), SPI_USR);
         }
     }
@@ -932,9 +936,9 @@ void precalculateLookupTables()
 void ili9341_init()
 {
     lineEnd = textEnd = 0;
-    spi_master_init();
-    ili_gpio_init();
-    ILI9341_INITIAL();
+    //spi_master_init();
+    //ili_gpio_init();
+    //ILI9341_INITIAL();
 
 #if PIN_NUM_BCKL >= 0
     LCD_BKG_ON();

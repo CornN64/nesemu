@@ -104,9 +104,29 @@ DRAM_ATTR static const lcd_init_cmd_t st_init_cmds[] = {
     {0x29, {0}, 0x80},
     {0, {0}, 0xff}};
 
+#define ILI9341_FRAMERATE_61_HZ 0x1F
+#define ILI9341_FRAMERATE_63_HZ 0x1E
+#define ILI9341_FRAMERATE_65_HZ 0x1D
+#define ILI9341_FRAMERATE_68_HZ 0x1C
+#define ILI9341_FRAMERATE_70_HZ 0x1B
+#define ILI9341_FRAMERATE_73_HZ 0x1A
+#define ILI9341_FRAMERATE_76_HZ 0x19
+#define ILI9341_FRAMERATE_79_HZ 0x18
+#define ILI9341_FRAMERATE_83_HZ 0x17
+#define ILI9341_FRAMERATE_86_HZ 0x16
+#define ILI9341_FRAMERATE_90_HZ 0x15
+#define ILI9341_FRAMERATE_95_HZ 0x14
+#define ILI9341_FRAMERATE_100_HZ 0x13
+#define ILI9341_FRAMERATE_106_HZ 0x12
+#define ILI9341_FRAMERATE_112_HZ 0x11
+#define ILI9341_FRAMERATE_119_HZ 0x10
+	
 DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[] = {
+    /* Power control A, Vcore=1.6V, DDVDH=5.6V */
+    {0xCB, {0x39, 0x2C, 0x00, 0x34, 0x02}, 5},
     /* Power contorl B, power control = 0, DC_ENA = 1 */
-    {0xCF, {0x00, 0x83, 0X30}, 3},
+    //{0xCF, {0x00, 0x83, 0X30}, 3},
+    {0xCF, {0x00, 0xC1, 0X30}, 3},
     /* Power on sequence control,
      * cp1 keeps 1 frame, 1st frame enable
      * vcl = 0, ddvdh=3, vgh=1, vgl=2
@@ -118,21 +138,24 @@ DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[] = {
      * EQ=default - 1, CR=default
      * pre-charge=default - 1
      */
-    {0xE8, {0x85, 0x01, 0x79}, 3},
-    /* Power control A, Vcore=1.6V, DDVDH=5.6V */
-    {0xCB, {0x39, 0x2C, 0x00, 0x34, 0x02}, 5},
-    /* Pump ratio control, DDVDH=2xVCl */
-    {0xF7, {0x20}, 1},
+    //{0xE8, {0x85, 0x01, 0x79}, 3},
+    {0xE8, {0x85, 0x01, 0x78}, 3},
+    /* Pump ratio control, DDVDH=2xVCl(0x20) or 3XVCI(0x30) only for ili9241 */
+    {0xF7, {0x30}, 1},
     /* Driver timing control, all=0 unit */
     {0xEA, {0x00, 0x00}, 2},
     /* Power control 1, GVDD=4.75V */
-    {0xC0, {0x26}, 1},
+    //{0xC0, {0x26}, 1},
+    {0xC0, {0x23}, 1},
     /* Power control 2, DDVDH=VCl*2, VGH=VCl*7, VGL=-VCl*3 */
-    {0xC1, {0x11}, 1},
+    //{0xC1, {0x11}, 1},
+    {0xC1, {0x10}, 1},
     /* VCOM control 1, VCOMH=4.025V, VCOML=-0.950V */
-    {0xC5, {0x35, 0x3E}, 2},
+    //{0xC5, {0x35, 0x3E}, 2},
+    {0xC5, {0x3E, 0x28}, 2},
     /* VCOM control 2, VCOMH=VMH-2, VCOML=VML-2 */
-    {0xC7, {0xBE}, 1},
+    //{0xC7, {0xBE}, 1},
+    {0xC7, {0x86}, 1},
     /* Memory access contorl, MX=MY=0, MV=1, ML=0, BGR=1, MH=0 */
 #ifdef ROTATE_LCD_180
     {0x36, {0x28^0xC0}, 1},
@@ -141,26 +164,29 @@ DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[] = {
 #endif
 	/* Pixel format, 16bits/pixel for RGB/MCU interface */
     {0x3A, {0x55}, 1},
-    /* Frame rate control, f=fosc, 70Hz fps */
-    {0xB1, {0x00, 0x1B}, 2},
+    /* Frame rate control*/
+    {0xB1, {0x00, ILI9341_FRAMERATE_119_HZ}, 2},	//Note that this refers to the ILI internal update rate not the actual pushed frames rate
     /* Enable 3G, disabled */
     {0xF2, {0x08}, 1},
     /* Gamma set, curve 1 */
     {0x26, {0x01}, 1},
     /* Positive gamma correction */
-    {0xE0, {0x1F, 0x1A, 0x18, 0x0A, 0x0F, 0x06, 0x45, 0X87, 0x32, 0x0A, 0x07, 0x02, 0x07, 0x05, 0x00}, 15},
+    //{0xE0, {0x1F, 0x1A, 0x18, 0x0A, 0x0F, 0x06, 0x45, 0X87, 0x32, 0x0A, 0x07, 0x02, 0x07, 0x05, 0x00}, 15},
+    {0xE0, {0x0F, 0x31, 0x2B, 0x0C, 0x0E, 0x08, 0x4E, 0xF1, 0x37, 0x07, 0x10, 0x03, 0x0E, 0x09, 0x00}, 15},
     /* Negative gamma correction */
-    {0XE1, {0x00, 0x25, 0x27, 0x05, 0x10, 0x09, 0x3A, 0x78, 0x4D, 0x05, 0x18, 0x0D, 0x38, 0x3A, 0x1F}, 15},
+    //{0XE1, {0x00, 0x25, 0x27, 0x05, 0x10, 0x09, 0x3A, 0x78, 0x4D, 0x05, 0x18, 0x0D, 0x38, 0x3A, 0x1F}, 15},
+    {0XE1, {0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F}, 15},
     /* Column address set, SC=0, EC=0xEF */
     {0x2A, {0x00, 0x00, 0x00, 0xEF}, 4},
     /* Page address set, SP=0, EP=0x013F */
     {0x2B, {0x00, 0x00, 0x01, 0x3f}, 4},
     /* Memory write */
-    {0x2C, {0}, 0},
+    //{0x2C, {0}, 0},
     /* Entry mode set, Low vol detect disabled, normal display */
     {0xB7, {0x07}, 1},
     /* Display function control */
-    {0xB6, {0x0A, 0x82, 0x27, 0x00}, 4},
+    //{0xB6, {0x0A, 0x82, 0x27, 0x00}, 4},
+    {0xB6, {0x08, 0x82, 0x27}, 3},
     /* Sleep out */
     {0x11, {0}, 0x80},
     /* Display on */
@@ -237,9 +263,9 @@ void lcd_init(spi_device_handle_t spi)
 
     //Reset the display
     gpio_set_level(PIN_NUM_RST, 0);
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_RATE_MS);
     gpio_set_level(PIN_NUM_RST, 1);
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_RATE_MS);
 
     //detect LCD type
     uint32_t lcd_id = lcd_get_id(spi);
@@ -402,22 +428,22 @@ static char* selectRomFromMenu(spi_device_handle_t spi)
             //The line set is queued up for sending now; the actual sending happens in the
             //background. We can go on to calculate the next line set as long as we do not
             //touch line[sending_line]; the SPI sending process is still reading from that.
-            if (getSelRom() != NO_ROM_SELECTED)
-            {
-				filename[0] = '\0';
-                strcat(filename, "/spiffs/");
-                strcat(filename, menuEntries[getSelRom()].fileName);
-                for (int i = 0; i < 2; i++)
-                {
-                    heap_caps_free(lines[i]);
-                }
-                return filename;
-            }
         }
-        vTaskDelay(10);
-    }
 
-    return NULL;
+        vTaskDelay(150 / portTICK_RATE_MS);
+
+		if (getSelRom() != NO_ROM_SELECTED)
+			break;
+    }
+	
+	filename[0] = '\0';
+	strcat(filename, "/spiffs/");
+	strcat(filename, menuEntries[getSelRom()].fileName);
+	for (int i = 0; i < 2; i++)
+	{
+		heap_caps_free(lines[i]);
+	}
+	return filename;
 }
 
 ledc_channel_config_t ledc_channel;
