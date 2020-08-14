@@ -410,8 +410,7 @@ static char* selectRomFromMenu(spi_device_handle_t spi)
     int sendingBufferIdx = -1;
     int activeBufferIdx = 0;
 
-    while (1)
-    {
+    do {
         for (int y = 0; y < SCREEN_HEIGHT; y += FRAMEBUFFER_HEIGHT)
         {
             //Draw a framebuffer's worth of graphics
@@ -431,11 +430,9 @@ static char* selectRomFromMenu(spi_device_handle_t spi)
         }
 
         vTaskDelay(150 / portTICK_RATE_MS);
-
-		if (getSelRom() != NO_ROM_SELECTED)
-			break;
-    }
-	
+    
+	} while ( getSelRom() == NO_ROM_SELECTED );
+		
 	filename[0] = '\0';
 	strcat(filename, "/spiffs/");
 	strcat(filename, menuEntries[getSelRom()].fileName);

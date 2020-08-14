@@ -531,14 +531,20 @@ static bool textEnd;
     SET_PERI_REG_MASK(SPI_CMD_REG(SPI_NUM), SPI_USR);                                                      \
     waitForSPIReady();
 
+#define RED (31<<11)	
+#define GREEN (63<<5)
+#define BLUE (0x0F)
+#define LBLUE (0x3333)	
+#define WHITE (0xFFFF)	
+	
 static uint16_t IRAM_ATTR renderInGameMenu(int x, int y, uint16_t x1, uint16_t y1, bool xStr)
 {
     bool yStr = false;
 	
 	if (x < 32 || x > 286 || y < 34 || y > 206)
-        return x1;
+        return x1;	
     else if (x < 40 || x > 280 || y < 38 || y > 202)
-        return 0x0F;
+        return BLUE;
 	
     char actChar = ' ';
     if (y == 38)
@@ -556,79 +562,79 @@ static uint16_t IRAM_ATTR renderInGameMenu(int x, int y, uint16_t x1, uint16_t y
     if (actChar == EOF_MARKER)
         textEnd = 1;
     if (lineEnd || textEnd)
-        return 0x0F;
+        return BLUE;
     //printf("char %c, x = %d, y = %d{\n",actChar,x,y);
     //color c = [b](0to31)*1 + [g](0to31)*31 + [r] (0to31)*1024 +0x8000 --> x1=y1=c; !?
     switch (actChar)
     {
     case DOWN_ARROW:
         if (arrow[8 - yy][xx])
-            return 0xDDDD;
+            return LBLUE;
         break;
     case LEFT_ARROW:
         if (arrow[xx][yy])
-            return 0xDDDD;
+            return LBLUE;
         break;
     case RIGHT_ARROW:
         if (arrow[8 - xx][yy])
-            return 0xDDDD;
+            return LBLUE;
         break;
     case UP_ARROW:
         if (arrow[yy][xx])
-            return 0xDDDD;
+            return LBLUE;
         break;
     case A_BUTTON:
         if (buttonA[yy][xx])
-            return 0xDDDD;
+            return LBLUE;
         break;
     case B_BUTTON:
         if (buttonB[yy][xx])
-            return 0xDDDD;
+            return LBLUE;
         break;
     case HORIZ_SCALE:
         if (xStr && enabled[yy][xx])
-            return 63 << 5;
+            return GREEN;
         else if (!xStr && disabled[yy][xx])
-            return 31 << 11;
+            return RED;
         break;
     case VERT_SCALE:
 		if (yStr && enabled[yy][xx])
-            return 63 << 5;
+            return GREEN;
         else if (!yStr && disabled[yy][xx])
-            return 31 << 11;
+            return RED;
         break;
     case BRIGHTNESS:
         if (scale[yy][xx])
         {
-            return xx < getBright() * 2 ? 0xFFFF : 0xDDDD;
             setBrightness(getBright());
+            return xx < (getBright() * 2) ? WHITE : LBLUE;
         }
         break;
     case VOL_METER:
         if (getVolume() == 0 && disabled[yy][xx])
-            return 31 << 11;
+            return RED;
 
         if (getVolume() > 0 && scale[yy][xx])
-            return (xx) < getVolume() * 2 ? 0xFFFF : 0xDDDD;
+            return xx < (getVolume() * 2) ? WHITE : LBLUE;
         break;
     case TURBO_A:
         if (!getTurboA() && disabled[yy][xx])
-            return 31 << 11;
+            return RED;
         if (getTurboA() > 0 && scale[yy][xx])
-            return (xx) < (getTurboA() * 2 - 1) ? 0xffff : 0xdddd;
+            return xx < (getTurboA() * 2 - 1) ? WHITE : LBLUE;
         break;
     case TURBO_B:
         if (!getTurboB() && disabled[yy][xx])
-            return 31 << 11;
+            return RED;
         if (getTurboB() > 0 && scale[yy][xx])
-            return (xx) < (getTurboB() * 2 - 1) ? 0xffff : 0xdddd;
+            return xx < (getTurboB() * 2 - 1) ? WHITE : LBLUE;
         break;
     default:
         if ((actChar < 47 || actChar > 57) && peGetPixel(actChar, (x - 40) % 16, (y - 38) % 18))
-            return 0xFFFF;
+            return WHITE;
         break;
     }
-    return 0x0F;
+    return BLUE;
 }
 
 #ifdef FULL_SCREEN

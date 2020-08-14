@@ -26,7 +26,7 @@
 #include "esp_spiffs.h"
 //#include "esp_int_wdt.h"
 //#include "esp_task_wdt.h"
-//#include "esp_bt.h"
+#include "esp_bt.h"
 #include "soc/rtc.h"
 //#include "driver/spi_master.h"
 //#include "driver/sdmmc_host.h"
@@ -110,16 +110,7 @@ esp_err_t registerSpiffs()
 void setup()
 {
   rtc_clk_cpu_freq_set(RTC_CPU_FREQ_240M);  //make sure we run at full tilt ;)
-}
-
-void esp_wake_deep_sleep()
-{
-  esp_restart();
-}
-
-void loop() {
-// put your main code here, to run repeatedly:
-// esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+  esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT); //Drop Bluetooth and get some memory back
 
 #ifdef CONFIG_SD_CARD
   registerSdCard();
@@ -128,7 +119,14 @@ void loop() {
 #endif
 
   ControllerInit();
+}
 
+void esp_wake_deep_sleep()
+{
+  esp_restart();
+}
+
+void loop() {
 #ifndef SKIP_MENU
   selectedRomFilename = runMenu();
 #endif
@@ -136,5 +134,5 @@ void loop() {
   printf("NoFrendo start!\n");
   nofrendo_main(0, NULL);
   printf("Ops...NoFrendo died?!\n");
-  asm("break.n 1");
+  //asm("break.n 1");
 }
