@@ -102,9 +102,9 @@
 
 // PSX input pin mapping 
 //#define CONFIG_HW_CONTROLLER_PSX	//Define to use PSX controller
-#define CONFIG_HW_PSX_DAT 21	//    # MISO
-#define CONFIG_HW_PSX_CMD 4		//    # MOSI
-#define CONFIG_HW_PSX_ATT 27	//    # CS
+#define CONFIG_HW_PSX_DAT 21	//    # DATA/MISO
+#define CONFIG_HW_PSX_CMD 4		//    # CMD/MOSI
+#define CONFIG_HW_PSX_ATT 27	//    # ATT
 #define CONFIG_HW_PSX_CLK 22	//    # CLK
 
 // GPIO pin mapping (raw button input)

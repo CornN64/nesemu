@@ -308,7 +308,7 @@ void lcd_init(spi_device_handle_t spi)
     {
         lcd_cmd(spi, lcd_init_cmds[cmd].cmd);
         lcd_data(spi, lcd_init_cmds[cmd].data, lcd_init_cmds[cmd].databytes & 0x1F);
-        if (lcd_init_cmds[cmd].databytes & 0x80)
+        if (lcd_init_cmds[cmd].databytes == 0x80)
         {
             vTaskDelay(100 / portTICK_RATE_MS);
         }
