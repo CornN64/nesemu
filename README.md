@@ -1,4 +1,4 @@
-# **NESEMU:** emulates the NES game console on an ESP32 with a 320x240 LCD screen, audio output, controller input and SD card support
+# **NESEMU:** emulates the NES game console on an ESP32 with a 320x240 ILI9341 TFT screen, audio output, various controller inputs and SD card
 ## Supports classic NES/SNES/PSX controllers or raw GPIO buttons.
 
 ![NESEMU](extras/LCD.jpg)
@@ -51,12 +51,12 @@ SNES       _
     NC    |o|
     GND   |o|
            -  	
-PSX		___________________
-		\o o o|o o o|o o o/
-		 -----------------
-		 1 2 3 4 5 6 7 8 9
+PSX ___________________
+    \o o o|o o o|o o o/
+     -----------------
+     1 2 3 4 5 6 7 8 9
 		 
-	1->DATA, 2->CMD, 4->GND, 5->3v3, 6->ATT, 7->CLK, 9->ACK
+    1->DATA, 2->CMD, 4->GND, 5->3v3, 6->ATT, 7->CLK, 9->ACK
 ```
 
 ## Build
@@ -69,8 +69,9 @@ of data it will take longer to transfer to the LCD. Pressing select and left sim
 you'll need hit the reset button on your ESP32 module or power cycle the ESP32.
 
 ## Options
-The file config.h in the src directory contains a few options and settings as well as the ESP32 pin mapping. Note that the LCD needs to use the VSPI interface to work properly, additionally it has a setting to rotate 180.
-ROMs can be put on the SD card (formatted as FAT) with 8.3 file names and then mapped to the file menu with the "roms.txt" file that also needs to be in the root dir of the SD card.
+The file config.h in the /src directory contains a few options and settings as well as the ESP32 pin mapping. Note that the LCD needs to use the VSPI interface to work fast/properly, additionally there is an option to rotate the screen 180 deg.
+The default way to update the screen is in interlaced mode (odd/even lines as opposed to progressive, full screen update) using the CPU/SPI buffer. This will allow the refreshrate to hit 60FPS even with the screen stretched along the x-axis.
+There are options to use DMA but in its current form there is no speed benefit. ROMs can be put on the SD card (formatted as FAT) with 8.3 file names and then mapped to the file menu with the "roms.txt" file that also needs to be in the root dir of the SD card.
 Note that the selected ROM gets memory mapped in the internal EEPROM of the ESP32 which means some wearing on its finite amount of write cycles (100k?). If the same ROM is selected after reset/power on then
 only a verify will take place to make sure the data is intact. This will then avoid a rewrite of the ROM image to the EEPROM.
 
