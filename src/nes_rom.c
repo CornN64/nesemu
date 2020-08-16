@@ -109,7 +109,6 @@ char *osd_getromdata()
 		printf("partition label = %s.\n", part->label);
 		printf("partition encrypted = %d.\n", part->encrypted);
 	}
-  //for(;;);
 	
 #ifndef SKIP_MENU
   // Open the file
