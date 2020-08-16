@@ -500,7 +500,7 @@ char* runMenu()
         .sclk_io_num = PIN_NUM_CLK,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .max_transfer_sz = FRAMEBUFFER_HEIGHT * SCREEN_WIDTH * 2 + 8,
+        .max_transfer_sz = 6 * SCREEN_WIDTH * 2 + 8,
         .flags = 0,
         .intr_flags = 0
 		};
@@ -509,7 +509,7 @@ char* runMenu()
         .command_bits = 0,
         .address_bits = 0,
         .dummy_bits = 0,		
-        .clock_speed_hz = SPI_MASTER_FREQ_80M,
+        .clock_speed_hz = LCD_SPI_CLOCK_RATE,
         .duty_cycle_pos = 0,
         .cs_ena_pretrans = 0,
         .cs_ena_posttrans = 0,
@@ -518,11 +518,7 @@ char* runMenu()
         .spics_io_num = PIN_NUM_CS,              //CS pin
         .queue_size = 7,                         //We want to be able to queue 7 transactions at a time
         .pre_cb = lcd_spi_pre_transfer_callback, //Specify pre-transfer callback to handle D/C line
-#ifdef SPI_DMA
-        .flags = 0
-#else
         .flags = SPI_DEVICE_NO_DUMMY
-#endif	
 		};
   
 	//Initialize the SPI bus

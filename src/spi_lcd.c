@@ -641,7 +641,9 @@ static uint16_t IRAM_ATTR renderInGameMenu(int x, int y, uint16_t x1, uint16_t y
 uint16_t scaleX[SCREEN_WIDTH];
 #endif
 
+//***************************
 //Clear whole screen to black
+//***************************
 void IRAM_ATTR ili9341_clr(void)
 {
     int i, x, y;
@@ -686,19 +688,28 @@ void IRAM_ATTR ili9341_clr(void)
 
 static int lastShowMenu = 0;
 
-#ifdef USE_SPI_DMA	//ToDo: DMA needs more work to make it efficient, maybe with IRQa and double buffer the DMA buffers
+#ifdef USE_SPI_DMA
 extern spi_device_handle_t _spi;
-uint16_t DMA_buf[4 * SCREEN_WIDTH];	//DMA buffer for 4 lines on screen
+static spi_transaction_t trans;
+
+#ifdef INTERLACED_FRAMES
+#define NUM_LINES 1
+uint16_t DMA_buf[2][NUM_LINES * SCREEN_WIDTH];	//DMA double buffer for X lines on screen
+//**********************************************************************************************************************************
+// DMA writes an interlaced frame (even/odd lines) to the TFT one line at the time //Corn 
+//**********************************************************************************************************************************
 void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const uint16_t width, const uint16_t height, const uint8_t *data[], bool xStr)
 {
 	if (data == NULL)
 		return;
 	
+	static bool first_frame = 1;
+	static bool interlace = 0;
+	int act = 0;
 	int i, x, y;
 	uint16_t x1, y1;
 	uint32_t xv, yv;
 	uint32_t dc = 1 << PIN_NUM_DC;
-	static spi_transaction_t trans;
 
     if (getShowMenu() != lastShowMenu)
     {
@@ -711,7 +722,117 @@ void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const u
 	uint32_t xStart = xTaskGetTickCount();	//SPI time
 #endif
 
-	//setup LCD SPI pixel push
+	if (!first_frame) spi_device_polling_end(_spi, &trans);	//make sure previous frame DMA is done
+
+	//setup LCD SPI frame push
+	x1 = xs + (width - 1);
+	y1 = ys + (height - 1);
+	xv = U16x2toU32(xs, x1);
+	
+	waitForSPIReady();
+	GPIO.out_w1tc = dc;
+	spiWrite(7, 0x2a);	// Set column (command 0x2a - col address) to X start
+	GPIO.out_w1ts = dc;
+	spiWrite(31, xv);
+
+	//Transfer from NES palette to RGB565 and move to DMA buffer one lines at the time.
+	for (y = ys+interlace; y < height+ys; y+=2)
+	{
+		if (getShowMenu())
+		{
+			for (x = 0; x < width; x+=2)
+			{
+				DMA_buf[act][x] = DMA_buf[act][x+1] = U16xtoZ16(renderInGameMenu(xs ? x+32 : x, y  , 0, 0, xStr));
+			}
+		}
+#ifdef FULL_SCREEN
+		else if (xStr)
+		{
+			for (x = 0; x < width; x++)
+			{
+				DMA_buf[act][x] = myPalette[data[y][scaleX[x]]];		//Convert from NES palette to RGB(565) format
+			}
+		}
+#endif
+		else
+		{
+			for (x = 0; x < width; x++)
+			{
+				DMA_buf[act][x] = myPalette[data[y][x]];	//Convert from NES palette to RGB(565) format
+			}
+		}
+		
+		if (y!=(ys+interlace)) spi_device_polling_end(_spi, &trans);	//Wait here for previous DMA to finish but skip first line
+
+		yv = U16x2toU32(y, y);		GPIO.out_w1tc = dc;
+		spiWrite(7, 0x2b);	// Set row (command 0x2B - page address) to Y start
+		GPIO.out_w1ts = dc;
+		spiWrite(31, yv);
+		GPIO.out_w1tc = dc;
+		spiWrite(7, 0x2c);	// Send memory write command
+		GPIO.out_w1ts = dc;
+
+		memset(&trans, 0, sizeof(spi_transaction_t));
+		trans.user = (void *)1;					//Data mode
+		trans.tx_buffer = (uint8_t*)DMA_buf[act];	//finally send the line data
+		trans.length = NUM_LINES * width * 16;			//Data length, in bits
+		trans.flags = 0;						//SPI_TRANS_USE_TXDATA flag
+
+		//spi_device_polling_transmit(_spi, &trans);
+		spi_device_polling_start(_spi, &trans, portMAX_DELAY);
+		act ^=1;	//Swap DMA buffers
+	}
+
+	interlace ^= 1;
+	
+	first_frame = 0;
+	
+#ifdef SHOW_SPI_TRANSFER_TIME
+	printf("%d\n", xTaskGetTickCount() - xStart);	//show frame transfer time in ms
+#endif
+    if (getShutdown())
+        setBrightness(getBright());
+#if PIN_NUM_BCKL >= 0
+    if (getBright() == -1)
+        LCD_BKG_OFF();
+#endif	
+}
+
+#else	//INTERLACED_FRAMES
+
+#define NUM_LINES 6
+uint16_t DMA_buf[2][NUM_LINES * SCREEN_WIDTH];	//DMA double buffer for X lines on screen
+//**********************************************************************************************************************************
+//Using DMA to write a whole frame to the TFT 6 lines at the time //Corn 
+//**********************************************************************************************************************************
+void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const uint16_t width, uint16_t height, const uint8_t *data[], bool xStr)
+{
+	if (data == NULL)
+		return;
+	
+	height -= 2;	//need to reduce screen by 2 lines to make it evenly divisable with 6 (assuming 224 is the height)
+	
+	static bool first_frame = 1;
+	int act = 0;
+	int i, x, y;
+	uint16_t x1, y1;
+	uint32_t xv, yv;
+	uint32_t dc = 1 << PIN_NUM_DC;
+
+    if (getShowMenu() != lastShowMenu)
+    {
+		ili9341_clr();
+    }
+	
+    lastShowMenu = getShowMenu();
+
+#ifdef SHOW_SPI_TRANSFER_TIME
+	uint32_t xStart = xTaskGetTickCount();	//SPI time
+#endif
+
+	if (!first_frame) spi_device_polling_end(_spi, &trans);	//make sure previous frame DMA is done
+
+	//setup LCD SPI frame push
 	x1 = xs + (width - 1);
 	y1 = ys + (height - 1);
 	xv = U16x2toU32(xs, x1);
@@ -730,17 +851,19 @@ void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const u
 	spiWrite(7, 0x2c);	// Send memory write command
 	GPIO.out_w1ts = dc;
 
-	//copy four lines at the time and push with DMA
-	for (y = ys; y < height+ys; y+=4)
+	//Transfer from NES palette to RGB565 and move to DMA buffer six lines at the time.
+	for (y = ys; y < height+ys; y+=NUM_LINES)
 	{
 		if (getShowMenu())
 		{
 			for (x = 0; x < width; x+=2)
 			{
-				DMA_buf[x]         = DMA_buf[x+1]         = U16xtoZ16(renderInGameMenu(xs ? x+32 : x, y  , 0, 0, xStr));
-				DMA_buf[x+width]   = DMA_buf[x+1+width]   = U16xtoZ16(renderInGameMenu(xs ? x+32 : x, y+1, 0, 0, xStr));
-				DMA_buf[x+width*2] = DMA_buf[x+1+width*2] = U16xtoZ16(renderInGameMenu(xs ? x+32 : x, y+2, 0, 0, xStr));
-				DMA_buf[x+width*3] = DMA_buf[x+1+width*3] = U16xtoZ16(renderInGameMenu(xs ? x+32 : x, y+3, 0, 0, xStr));
+				DMA_buf[act][x]         = DMA_buf[act][x+1]         = U16xtoZ16(renderInGameMenu(xs ? x+32 : x, y  , 0, 0, xStr));
+				DMA_buf[act][x+width]   = DMA_buf[act][x+1+width]   = U16xtoZ16(renderInGameMenu(xs ? x+32 : x, y+1, 0, 0, xStr));
+				DMA_buf[act][x+width*2] = DMA_buf[act][x+1+width*2] = U16xtoZ16(renderInGameMenu(xs ? x+32 : x, y+2, 0, 0, xStr));
+				DMA_buf[act][x+width*3] = DMA_buf[act][x+1+width*3] = U16xtoZ16(renderInGameMenu(xs ? x+32 : x, y+3, 0, 0, xStr));
+				DMA_buf[act][x+width*4] = DMA_buf[act][x+1+width*4] = U16xtoZ16(renderInGameMenu(xs ? x+32 : x, y+4, 0, 0, xStr));
+				DMA_buf[act][x+width*5] = DMA_buf[act][x+1+width*5] = U16xtoZ16(renderInGameMenu(xs ? x+32 : x, y+5, 0, 0, xStr));
 			}
 		}
 #ifdef FULL_SCREEN
@@ -748,10 +871,12 @@ void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const u
 		{
 			for (x = 0; x < width; x++)
 			{
-				DMA_buf[x] = myPalette[data[y][scaleX[x]]];	//Convert from NES palette to RGB(565) format
-				DMA_buf[x+SCREEN_WIDTH] = myPalette[data[y+1][scaleX[x]]];	//Convert from NES palette to RGB(565) format
-				DMA_buf[x+SCREEN_WIDTH*2] = myPalette[data[y+2][scaleX[x]]];	//Convert from NES palette to RGB(565) format
-				DMA_buf[x+SCREEN_WIDTH*3] = myPalette[data[y+3][scaleX[x]]];	//Convert from NES palette to RGB(565) format
+				DMA_buf[act][x]                = myPalette[data[y][scaleX[x]]];		//Convert from NES palette to RGB(565) format
+				DMA_buf[act][x+SCREEN_WIDTH]   = myPalette[data[y+1][scaleX[x]]];	//Convert from NES palette to RGB(565) format
+				DMA_buf[act][x+SCREEN_WIDTH*2] = myPalette[data[y+2][scaleX[x]]];	//Convert from NES palette to RGB(565) format
+				DMA_buf[act][x+SCREEN_WIDTH*3] = myPalette[data[y+3][scaleX[x]]];	//Convert from NES palette to RGB(565) format
+				DMA_buf[act][x+SCREEN_WIDTH*4] = myPalette[data[y+4][scaleX[x]]];	//Convert from NES palette to RGB(565) format
+				DMA_buf[act][x+SCREEN_WIDTH*5] = myPalette[data[y+5][scaleX[x]]];	//Convert from NES palette to RGB(565) format
 			}
 		}
 #endif
@@ -759,23 +884,29 @@ void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const u
 		{
 			for (x = 0; x < width; x++)
 			{
-				DMA_buf[x] = myPalette[data[y][x]];	//Convert from NES palette to RGB(565) format
-				DMA_buf[x+NES_WIDTH] = myPalette[data[y+1][x]];	//Convert from NES palette to RGB(565) format
-				DMA_buf[x+NES_WIDTH*2] = myPalette[data[y+2][x]];	//Convert from NES palette to RGB(565) format
-				DMA_buf[x+NES_WIDTH*3] = myPalette[data[y+3][x]];	//Convert from NES palette to RGB(565) format
+				DMA_buf[act][x]             = myPalette[data[y][x]];	//Convert from NES palette to RGB(565) format
+				DMA_buf[act][x+NES_WIDTH]   = myPalette[data[y+1][x]];	//Convert from NES palette to RGB(565) format
+				DMA_buf[act][x+NES_WIDTH*2] = myPalette[data[y+2][x]];	//Convert from NES palette to RGB(565) format
+				DMA_buf[act][x+NES_WIDTH*3] = myPalette[data[y+3][x]];	//Convert from NES palette to RGB(565) format
+				DMA_buf[act][x+NES_WIDTH*4] = myPalette[data[y+4][x]];	//Convert from NES palette to RGB(565) format
+				DMA_buf[act][x+NES_WIDTH*5] = myPalette[data[y+5][x]];	//Convert from NES palette to RGB(565) format
 			}
 		}
 		
+		if (y!=ys) spi_device_polling_end(_spi, &trans);	//Wait here for previous DMA to finish but skip first line
+
 		memset(&trans, 0, sizeof(spi_transaction_t));
 		trans.user = (void *)1;					//Data mode
-		trans.tx_buffer = (uint8_t*)DMA_buf;	//finally send the line data
-		trans.length = 4 * width * 16;			//Data length, in bits
+		trans.tx_buffer = (uint8_t*)DMA_buf[act];	//finally send the line data
+		trans.length = NUM_LINES * width * 16;			//Data length, in bits
 		trans.flags = 0;						//SPI_TRANS_USE_TXDATA flag
 
-		spi_device_polling_transmit(_spi, &trans);
-		//spi_device_polling_start(_spi, &trans, portMAX_DELAY);
-		//spi_device_polling_end(_spi, &trans);
+		//spi_device_polling_transmit(_spi, &trans);
+		spi_device_polling_start(_spi, &trans, portMAX_DELAY);
+		act ^=1;	//Swap DMA buffers
 	}
+	
+	first_frame = 0;
 #ifdef SHOW_SPI_TRANSFER_TIME
 	printf("%d\n", xTaskGetTickCount() - xStart);	//show frame transfer time in ms
 #endif
@@ -786,10 +917,162 @@ void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const u
         LCD_BKG_OFF();
 #endif	
 }
+#endif	//INTERLACED_FRAMES
 
-#else //DONT USE_SPI_DMA
+#else //USE_SPI_DMA
 
+#ifdef INTERLACED_FRAMES
+//**********************************************************************************************************************************
+//The CPU writes an interlaced frame (even/odd lines) to the TFT in 32 16bit pixel chunks making sure to minimize wating time //Corn 
+//**********************************************************************************************************************************
+void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const uint16_t width, const uint16_t height, const uint8_t *data[], bool xStr)
+{
+    static bool interlace = 0;
+	int i, x, y;
+    uint16_t x1, y1, evenPixel, oddPixel;
+    uint32_t xv, yv;
+	uint32_t dc = 1 << PIN_NUM_DC;
+    uint32_t temp[16];
+    
+	if (data == NULL)
+        return;
+
+    if (getShowMenu() != lastShowMenu)
+    {
+		ili9341_clr();
+    }
+	
+    lastShowMenu = getShowMenu();
+
+#ifdef SHOW_SPI_TRANSFER_TIME
+	uint32_t xStart = xTaskGetTickCount();	//SPI time
+#endif
+	
+	//setup LCD SPI pixel push
+	x1 = xs + (width - 1);
+	y1 = ys + (height - 1);
+	xv = U16x2toU32(xs, x1);
+	
+	waitForSPIReady();	//Wait for previous transfer to finish
+	GPIO.out_w1tc = dc;
+	spiWrite(7, 0x2a);	// Set column (command 0x2A - col address) to X start
+	GPIO.out_w1ts = dc;
+	spiWrite(31, xv);
+
+	for (y = ys+interlace; y < height+ys; y+=2)
+    {
+		waitForSPIReady();	//Wait for previous transfer to finish
+		yv = U16x2toU32(y, y);
+		GPIO.out_w1tc = dc;
+		spiWrite(7, 0x2b);	// Set row (command 0x2B - page address) to Y start
+		GPIO.out_w1ts = dc;
+		spiWrite(31, yv);
+		GPIO.out_w1tc = dc;
+		spiWrite(7, 0x2c);	// Send memory write command (command 0x2C)
+		GPIO.out_w1ts = dc;
+		SET_PERI_REG_BITS(SPI_MOSI_DLEN_REG(SPI_NUM), SPI_USR_MOSI_DBITLEN, 511, SPI_USR_MOSI_DBITLEN_S);
+
+		x = 0;
+        while (x < width)
+        {
+            // Render 32 pixels, grouped as pairs of 16-bit pixels stored in 32-bit values
+			if (getShowMenu())
+			{
+				for (i = 0; i < 16; i++)
+                {
+                    evenPixel = oddPixel = renderInGameMenu(xs ? x+32 : x, y, 0, 0, xStr);
+					temp[i] = U16x2toU32(evenPixel, oddPixel);
+					x+=2;
+                }
+			}
+#ifdef FULL_SCREEN
+			else if (xStr)			
+			{
+				//Color from palette is already byte swizzled
+				temp[0] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[1] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[2] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[3] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[4] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[5] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[6] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[7] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[8] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[9] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[10] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[11] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[12] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[13] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[14] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				temp[15] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+			}
+#endif			
+			else
+			{	//Color from palette is already byte swizzled
+				temp[0] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[1] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[2] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[3] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[4] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[5] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[6] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[7] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[8] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[9] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[10] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[11] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[12] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[13] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[14] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[15] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+            }
+	
+			//Special trick here so we can patially fill the SPI TX buffer and start the transfer early //Corn
+			taskDISABLE_INTERRUPTS();	//globally disable all maskable interrupts
+            
+			waitForSPIReady();	//Wait for previous transfer to finish
+			
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 0), temp[0]);
+            SET_PERI_REG_MASK(SPI_CMD_REG(SPI_NUM), SPI_USR);	//Start SPI transfer early and continue to fill the SPI TX buffer to save time
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 4), temp[1]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 8), temp[2]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 12), temp[3]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 16), temp[4]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 20), temp[5]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 24), temp[6]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 28), temp[7]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 32), temp[8]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 36), temp[9]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 40), temp[10]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 44), temp[11]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 48), temp[12]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 52), temp[13]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 56), temp[14]);
+            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 60), temp[15]);
+			
+			taskENABLE_INTERRUPTS();	//globally enable all maskable interrupts
+        }
+    }
+
+	interlace ^= 1;
+	
+#ifdef SHOW_SPI_TRANSFER_TIME
+	printf("%d\n", xTaskGetTickCount() - xStart);	//show frame transfer time in ms
+#endif
+	 
+    if (getShutdown())
+        setBrightness(getBright());
+#if PIN_NUM_BCKL >= 0
+    if (getBright() == -1)
+        LCD_BKG_OFF();
+#endif
+}
+
+#else	//INTERLACED_FRAMES
+
+//**********************************************************************************************************************************
 //The CPU writes the whole frame to the TFT in 32 16bit pixel chunks making sure to minimize wating time //Corn 
+//**********************************************************************************************************************************
 void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const uint16_t width, const uint16_t height, const uint8_t *data[], bool xStr)
 {
     int i, x, y;
@@ -927,6 +1210,7 @@ void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const u
         LCD_BKG_OFF();
 #endif
 }
+#endif //INTERLACED_FRAMES
 #endif	//USE_SPI_DMA
 
 #ifdef FULL_SCREEN

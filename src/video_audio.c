@@ -84,7 +84,7 @@ static void do_audio_frame()
 	{
 		int n = AUDIO_BUFFER_LENGTH > samplesRemaining ? samplesRemaining : AUDIO_BUFFER_LENGTH;
 		apu_process(audio_buffer, n);
-		//audio_callback(audio_buffer, n);  Why does this crash??
+		//if (audio_callback) audio_callback(audio_buffer, n);  //Why does this crash??
 		for (int i=0; i < n; i++) {
 			int16_t sample = bufS[i];
 			uint16_t unsignedSample = sample ^ 0x8000;

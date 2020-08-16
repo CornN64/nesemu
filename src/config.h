@@ -12,7 +12,7 @@
 #define SCREEN_HEIGHT 240
 #define NES_WIDTH 256
 #define NES_HEIGHT 240
-#define NES_VIS_LINES 224
+#define NES_VIS_LINES 224	//This number impacts SPI transfers to the LCD
 
 //Define Display type ILI9341 (currently only ILI9341 works)
 #define CONFIG_HW_LCD_TYPE LCD_TYPE_ILI
@@ -26,6 +26,10 @@
 // Sound Settings, Note: Do not assign anything else to pins 25 or 26, those are used by I2S
 #define CONFIG_SOUND_ENABLED
 
+//LCD SPI transfer clock rate. With short leads to the display it is possible to run the display at 80MHz however here you can opt to run it slower
+#define LCD_SPI_CLOCK_RATE SPI_MASTER_FREQ_80M	//80MHz
+//#define LCD_SPI_CLOCK_RATE SPI_MASTER_FREQ_40M	//40MHz
+
 //If defined it allows selection in the menu to scale/stretch frame (X axis only) to full screen (with artifacts in scrolling games).
 //It will also be slightly slower with stretch screen enabled due to more data needs to be sent over SPI to the LCD
 //0 -> defaults to not stretched, 1 -> defaults to stretched 
@@ -37,7 +41,10 @@
 // If defined rotate display 180 deg
 #define ROTATE_LCD_180
 
-// Use DMA to transfer to screen if defined else use CPU (CPU is faster for now)
+// If defined TFT will show interlaced frames (even/odd lines refresh to render 60FPS)
+#define INTERLACED_FRAMES
+
+// Use DMA to transfer to screen if defined else use CPU (DMA and CPU are about equally fast...)
 //#define USE_SPI_DMA
 
 // Turn on various debugging options
