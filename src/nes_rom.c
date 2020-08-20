@@ -94,7 +94,6 @@ char *osd_getromdata()
   // Locate our target ROM partition where the file will be loaded
   //esp_partition_t *part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, 0xFF, "rom");
   esp_partition_t *part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, "app1");
-  //esp_partition_erase_range(part, 0, part->size); // erase entire partition
   if (part == 0)
 	{
 		printf("Couldn't find rom partition!\n");

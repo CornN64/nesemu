@@ -1,5 +1,5 @@
 //Config file for ESP32 NES emulator Corn 2020
-#pragma GCC optimize ("-O2")
+#pragma GCC optimize ("O2")
 #pragma once 
 
 //Setting FreeRTOS sheduler to 300Hz

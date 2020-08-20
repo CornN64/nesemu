@@ -351,7 +351,7 @@ int osd_init()
     ili9341_clr();
 #ifdef RUN_VIDEO_AS_TASK
 	vidQueue = xQueueCreate(1, sizeof(bitmap_t *));
-	xTaskCreatePinnedToCore(&videoTask, "videoTask", 2048, NULL, 5, NULL, RUN_VIDEO_AS_TASK);	//Start video pump task on core 1 or 0
+	xTaskCreatePinnedToCore(&videoTask, "videoTask", 2048, NULL, 50, NULL, RUN_VIDEO_AS_TASK);	//Start video pump task on core 1 or 0
 #endif	
 	osd_initinput();
 	printf("free heap after input init: %d\n", xPortGetFreeHeapSize());

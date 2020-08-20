@@ -380,7 +380,7 @@ int vid_setmode(int width, int height)
    if (NULL != back_buffer)
       bmp_destroy(&back_buffer);
 
-   back_buffer = bmp_create(width, height, 8); /* no overdraw */
+   back_buffer = bmp_create(width, height, 8); /* 8 overdraw */
    if (NULL == back_buffer)
    {
       bmp_destroy(&primary_buffer);

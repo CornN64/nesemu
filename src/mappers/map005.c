@@ -167,19 +167,19 @@ static void map5_write(uint32 address, uint8 value)
       break;
 
    case 0x5124:
-      mmc_bankvrom(1, 0x1000, value);
+      //mmc_bankvrom(1, 0x1000, value);
       break;
 
    case 0x5125:
-      mmc_bankvrom(1, 0x1400, value);
+      //mmc_bankvrom(1, 0x1400, value);
       break;
 
    case 0x5126:
-      mmc_bankvrom(1, 0x1800, value);
+      //mmc_bankvrom(1, 0x1800, value);
       break;
 
    case 0x5127:
-      mmc_bankvrom(1, 0x1C00, value);
+      //mmc_bankvrom(1, 0x1C00, value);
       break;
 
    case 0x5128:	//should also map to $0000-$03FF 
