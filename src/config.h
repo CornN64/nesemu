@@ -35,8 +35,11 @@
 //0 -> defaults to not stretched, 1 -> defaults to stretched 
 #define FULL_SCREEN 0
 
-// If defined it will run the SPI transfer to the LCD as a task (and which CPU core 0 or 1 default)
-#define RUN_VIDEO_AS_TASK 1
+// If defined it will run the SPI transfer to the LCD as a task and which CPU core 0(faster with volatiles) or 1(faster with OS_SEMAPHORE)
+#define RUN_VIDEO_AS_TASK 0
+
+// If defined it will use OS semafores (which seems slower!?) else use simple volatile
+//#define USE_OS_SEMAPHORES 
 
 // If defined rotate display 180 deg
 #define ROTATE_LCD_180
@@ -52,7 +55,7 @@
 //#define MEMORY_DEBUG
 //#define MAPPER_DEBUG
 //#define SHOW_SPI_TRANSFER_TIME	//in milli seconds
-//#define SHOW_RENDER_VIDEO_TIME	//in milli seconds
+#define SHOW_RENDER_VIDEO_TIME	//in milli seconds
 
 //Define and it will directly boot the ROM from the list
 //#define BOOT_ROM 0   

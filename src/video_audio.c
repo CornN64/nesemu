@@ -53,7 +53,7 @@ int osd_installtimer(int frequency, void *func, int funcsize, void *counter, int
 {
 	timer = xTimerCreate("nes", configTICK_RATE_HZ / frequency, pdTRUE, NULL, func);
 	xTimerStart(timer, 0);
-	printf("Timer install, freq=%d\n", frequency);
+	printf("Timer install %dHz\n", frequency);
 	return 0;
 }
 
@@ -244,11 +244,21 @@ static void free_write(int num_dirties, rect_t *dirty_rects)
 	bmp_destroy(&myBitmap);
 }
 
+volatile bitmap_t *_bmp = NULL;	//used to pass info between cores
+volatile bool _bmp_inited = false; //used to pass info between cores
 static void custom_blit(bitmap_t *bmp, int num_dirties, rect_t *dirty_rects)
 {
 #ifdef RUN_VIDEO_AS_TASK
-	xQueueSend(vidQueue, &bmp, 0);
+	#ifdef USE_OS_SEMAPHORES
+		xQueueSend(vidQueue, &bmp, 0);
+		do_audio_frame();
+	#else
+		_bmp = bmp;
+		_bmp_inited = true;
+		do_audio_frame();
+	#endif
 #else
+	do_audio_frame();
 	int x, y, xWidth, yHight;
 	xWidth = getXStretch() ? SCREEN_WIDTH : NES_WIDTH;
 	yHight = NES_VIS_LINES;
@@ -256,24 +266,44 @@ static void custom_blit(bitmap_t *bmp, int num_dirties, rect_t *dirty_rects)
 	y = (SCREEN_HEIGHT - yHight) >> 1;
 	ili9341_write_frame(x, y, xWidth, yHight, (const uint8_t **)bmp->line, getXStretch());
 #endif	
-	do_audio_frame();
 }
 
 #ifdef RUN_VIDEO_AS_TASK
 static void IRAM_ATTR videoTask(void *arg)
 {
+#ifdef USE_OS_SEMAPHORES
 	int x, y, xWidth, yHight;	
 	bitmap_t *bmp = NULL;
 	yHight = NES_VIS_LINES;
 	y = (SCREEN_HEIGHT - yHight) >> 1;
 	
-	while (1)
+	while (true)
 	{
 		xWidth = getXStretch() ? SCREEN_WIDTH : NES_WIDTH;
 		x = (SCREEN_WIDTH - xWidth) >> 1;
 		xQueueReceive(vidQueue, &bmp, portMAX_DELAY);
 		ili9341_write_frame(x, y, xWidth, yHight, (const uint8_t **)bmp->line, getXStretch());
 	}
+#else
+	int last_ticks;
+	int x, y, xWidth, yHight;	
+	bitmap_t *bmp = NULL;
+	yHight = NES_VIS_LINES;
+	y = (SCREEN_HEIGHT - yHight) >> 1;
+	last_ticks = nofrendo_ticks;
+	
+	while (1)
+	{
+		xWidth = getXStretch() ? SCREEN_WIDTH : NES_WIDTH;
+		x = (SCREEN_WIDTH - xWidth) >> 1;
+		if (last_ticks != nofrendo_ticks && _bmp_inited)
+		{
+			last_ticks = nofrendo_ticks;
+			ili9341_write_frame(x, y, xWidth, yHight, (const uint8_t **)_bmp->line, getXStretch());
+		}
+		else vTaskDelay(1);
+	}
+#endif
 }
 #endif
 
@@ -350,8 +380,10 @@ int osd_init()
 	ili9341_init();
     ili9341_clr();
 #ifdef RUN_VIDEO_AS_TASK
+	#ifdef USE_OS_SEMAPHORES
 	vidQueue = xQueueCreate(1, sizeof(bitmap_t *));
-	xTaskCreatePinnedToCore(&videoTask, "videoTask", 2048, NULL, 50, NULL, RUN_VIDEO_AS_TASK);	//Start video pump task on core 1 or 0
+	#endif
+	xTaskCreatePinnedToCore(&videoTask, "videoTask", 2048, NULL, 5, NULL, RUN_VIDEO_AS_TASK);	//Start video pump task on core 1 or 0
 #endif	
 	osd_initinput();
 	printf("free heap after input init: %d\n", xPortGetFreeHeapSize());
