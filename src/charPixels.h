@@ -76,10 +76,8 @@ int getCharPixel(int x, int y, int change, int choosen)
 	int charNo = (x - 26) / 16;
 	char actChar;
 
-	if (line >= entryCount)
-	{
-		return 0x0000;
-	}
+	if (line >= entryCount) return 0x0000;
+	
 	if (x >= 7 && x <= 22)
 	{
 		if (line == choosen)
@@ -87,17 +85,20 @@ int getCharPixel(int x, int y, int change, int choosen)
 		else
 			return 0x0000;
 	}
+	
 	actChar = menuEntries[line].name[charNo];
+	
 	if (actChar < ' ')
 	{
 		return 0x0000;
 	}
+	
 	if (getPixel(actChar, (x - 26) % 16, (y - 3) % 18) == 1)
 		return 0x001F;
 	return 0x0000;
 }
 
-void freeRL()
+void freeRomList()
 {
 	free(menuEntries);
 }

@@ -33,49 +33,16 @@ int selRom;
 bool xStretch;
 bool yStretch;
 
-void setBright(int bright)
-{
-	setBr(bright);
-}
+void setBright(int bright){	setBr(bright);}
+bool peGetPixel(char peChar, int pe1, int pe2){	return cpGetPixel(peChar, pe1, pe2);}
+bool getYStretch(){	return yStretch;}
+bool getXStretch(){	return xStretch;}
+void setXStretch(bool str){	xStretch = str;}
+void setYStretch(bool str){	yStretch = str;}
+void setLineMax(int lineM){	lineMax = lineM;}
+void setSelRom(int selR){ selRom = selR;}
+int getSelRom(){ return selRom;}
 
-bool peGetPixel(char peChar, int pe1, int pe2)
-{
-	return cpGetPixel(peChar, pe1, pe2);
-}
-
-bool getYStretch()
-{
-	return yStretch;
-}
-
-bool getXStretch()
-{
-	return xStretch;
-}
-
-void setXStretch(bool str)
-{
-	xStretch = str;
-}
-
-void setYStretch(bool str)
-{
-	yStretch = str;
-}
-void setLineMax(int lineM)
-{
-	lineMax = lineM;
-}
-
-void setSelRom(int selR)
-{
-	selRom = selR;
-}
-
-int getSelRom()
-{
-	return selRom;
-}
 //!!! Colors repeat after 3Bit(example: 001 = light green, 111 = max green -> 1000 = again light green),
 //		 so all values over (dec) 7 start to repeat the color, but they are stored in 5bits!!!
 //returns a 16bit rgb Color (1Bit + 15Bit bgr), values for each Color from 0-31
@@ -108,14 +75,15 @@ static inline uint16_t get_bgnd_pixel(int x, int y, int selectedIdx)
 // Deal with user activity during boot screen and menu
 void handleUserInput()
 {
-	if (inputDelay > 0)
-		inputDelay -= 1;
+	if (inputDelay > 0)	inputDelay -= 1;
+	
 	int input = ReadControllerInput();
+	
 	if (splashScreenTimer > 0)
 	{
 		if (isAnyPressed(input)) {
 			// Immediately cancel splashscreen
-			printf("Cancelling animation\n");
+			//printf("Cancelling animation\n");
 			splashScreenTimer = 0;
 			inputDelay = DEFAULT_MENU_DELAY;
 		}
