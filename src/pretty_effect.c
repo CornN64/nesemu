@@ -19,12 +19,8 @@
 #include "Controller.h"
 #include "config.h"
 
-int newX;
 int splashScreenTimer;
-int bottomLogoOffset;
-int logoMoveSpeed;
-int whiteN;
-int colorCycle;
+int colorCycle=0;
 int selectedIdx;
 int inputDelay;
 int lineMax;

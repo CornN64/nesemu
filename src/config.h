@@ -59,13 +59,13 @@
 
 // LCD Settings using VSPI bus
 // LCD pin mapping
-#define CONFIG_HW_LCD_CS_GPIO 5
 #define CONFIG_HW_LCD_RESET_GPIO 0
+#define CONFIG_HW_LCD_CS_GPIO 5
 #define CONFIG_HW_LCD_DC_GPIO 2
 #define CONFIG_HW_LCD_MOSI_GPIO 23
 #define CONFIG_HW_LCD_CLK_GPIO 18
-#define CONFIG_HW_LCD_BL_GPIO -1
 #define CONFIG_HW_LCD_MISO_GPIO 19
+#define CONFIG_HW_LCD_BL_GPIO -1
 
 // SD card pin mapping
 #define CONFIG_SD_CARD

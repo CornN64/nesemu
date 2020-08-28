@@ -56,14 +56,14 @@ void initRomList()
 				menuEntries[i].fileName[j] = '\0';
 			}
 		}
-		printf("Read entry number %d; icon %c; name %s; file %s\n",
+		printf("ROM[%d] icon[%c] name[%s] file[%s]\n",
 			   menuEntries[i].entryNumber,
 			   menuEntries[i].icon,
 			   menuEntries[i].name,
 			   menuEntries[i].fileName);
 	}
 	fclose(romsFile);
-	printf("Read %d rom entries\n", entryCount);
+	printf("Found %d ROMs\n", entryCount);
 }
 
 //get depending on x/y value the actual char from lines array
