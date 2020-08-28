@@ -27,7 +27,8 @@ extern "C"
 #endif
 void ili9341_clr(void);
 
-void ili9341_write_frame(const uint16_t x, const uint16_t y, const uint16_t width, const uint16_t height, const uint8_t *data[], bool xStr);
+void ili9341_write_Iframe(const uint16_t x, const uint16_t y, const uint16_t width, const uint16_t height, const uint8_t *data[], bool xStr);
+void ili9341_write_Pframe(const uint16_t x, const uint16_t y, const uint16_t width, const uint16_t height, const uint8_t *data[], bool xStr);
 void ili9341_init();
 
 

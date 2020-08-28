@@ -44,9 +44,6 @@
 // If defined rotate display 180 deg
 #define ROTATE_LCD_180
 
-// If defined TFT will show interlaced frames (even/odd lines refresh to render 60FPS)
-#define INTERLACED_FRAMES
-
 // Use DMA to transfer to screen if defined else use CPU (DMA and CPU are about equally fast...)
 //#define USE_SPI_DMA
 

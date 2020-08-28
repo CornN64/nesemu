@@ -363,8 +363,8 @@ int ReadControllerInput()
       if (isDownPressed(b2b1) && volume > 0) volume--;
       if (isRightPressed(b2b1) && bright < 4) bright++;
       if (isLeftPressed(b2b1) && bright > 0)  bright--;
-      if (isAPressed(b2b1)) setYStretch(1 - getYStretch());
-      if (isBPressed(b2b1)) setXStretch(1 - getXStretch());
+      if (isAPressed(b2b1)) setUpdateMode(1 ^ getUpdateMode());
+      if (isBPressed(b2b1)) setXStretch(1 ^ getXStretch());
       if (isTurboAPressed(b2b1)) turboASpeed = (turboASpeed + 1) % MAX_TURBO;
       if (isTurboBPressed(b2b1)) turboBSpeed = (turboBSpeed + 1) % MAX_TURBO;
       if (isAnyPressed(b2b1)) inpDelay = 15;

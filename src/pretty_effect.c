@@ -31,14 +31,14 @@ int lineMax;
 int selRom;
 
 bool xStretch;
-bool yStretch;
+bool UpdateMode;
 
 void setBright(int bright){	setBr(bright);}
 bool peGetPixel(char peChar, int pe1, int pe2){	return cpGetPixel(peChar, pe1, pe2);}
-bool getYStretch(){	return yStretch;}
+bool getUpdateMode(){ return UpdateMode;}
 bool getXStretch(){	return xStretch;}
 void setXStretch(bool str){	xStretch = str;}
-void setYStretch(bool str){	yStretch = str;}
+void setUpdateMode(bool str){ UpdateMode = str;}
 void setLineMax(int lineM){	lineMax = lineM;}
 void setSelRom(int selR){ selRom = selR;}
 int getSelRom(){ return selRom;}
@@ -154,7 +154,7 @@ esp_err_t menuInit()
 	selectedIdx = 0;
 	inputDelay = 0;
 	lineMax = 0;
-	yStretch = 0;
+	UpdateMode = 0;	//default to interlaced mode
 #ifdef FULL_SCREEN
 	xStretch = FULL_SCREEN;
 #else

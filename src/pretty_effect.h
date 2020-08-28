@@ -29,12 +29,12 @@ int getSelRom();
 
 void setSelRom(int selR);
 
-bool getYStretch();
+bool getUpdateMode();
 
 bool getXStretch();
 
 void setXStretch(bool str);
 
-void setYStretch(bool str);
+void setUpdateMode(bool str);
 
 void setBright(int bright);

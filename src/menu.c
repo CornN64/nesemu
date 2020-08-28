@@ -263,9 +263,9 @@ void lcd_init(spi_device_handle_t spi)
 
     //Reset the display
     gpio_set_level(PIN_NUM_RST, 0);
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_RATE_MS);
     gpio_set_level(PIN_NUM_RST, 1);
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_RATE_MS);
 
     //detect LCD type
     uint32_t lcd_id = lcd_get_id(spi);

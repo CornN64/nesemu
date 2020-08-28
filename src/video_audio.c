@@ -264,7 +264,10 @@ static void custom_blit(bitmap_t *bmp, int num_dirties, rect_t *dirty_rects)
 	yHight = NES_VIS_LINES;
 	x = (SCREEN_WIDTH - xWidth) >> 1;
 	y = (SCREEN_HEIGHT - yHight) >> 1;
-	ili9341_write_frame(x, y, xWidth, yHight, (const uint8_t **)bmp->line, getXStretch());
+	if (getUpdateMode())
+		ili9341_write_Pframe(x, y, xWidth, yHight, (const uint8_t **)bmp->line, getXStretch());
+	else
+		ili9341_write_Iframe(x, y, xWidth, yHight, (const uint8_t **)bmp->line, getXStretch());
 #endif	
 }
 
@@ -282,7 +285,10 @@ static void IRAM_ATTR videoTask(void *arg)
 		xWidth = getXStretch() ? SCREEN_WIDTH : NES_WIDTH;
 		x = (SCREEN_WIDTH - xWidth) >> 1;
 		xQueueReceive(vidQueue, &bmp, portMAX_DELAY);
-		ili9341_write_frame(x, y, xWidth, yHight, (const uint8_t **)bmp->line, getXStretch());
+		if (getUpdateMode())
+			ili9341_write_Pframe(x, y, xWidth, yHight, (const uint8_t **)bmp->line, getXStretch());
+		else
+			ili9341_write_Iframe(x, y, xWidth, yHight, (const uint8_t **)bmp->line, getXStretch());
 	}
 #else
 	int last_ticks;
@@ -299,7 +305,10 @@ static void IRAM_ATTR videoTask(void *arg)
 		if (last_ticks != nofrendo_ticks && _bmp_inited)
 		{
 			last_ticks = nofrendo_ticks;
-			ili9341_write_frame(x, y, xWidth, yHight, (const uint8_t **)_bmp->line, getXStretch());
+			if (getUpdateMode())
+				ili9341_write_Pframe(x, y, xWidth, yHight, (const uint8_t **)_bmp->line, getXStretch());
+			else
+				ili9341_write_Iframe(x, y, xWidth, yHight, (const uint8_t **)_bmp->line, getXStretch());
 		}
 		else vTaskDelay(1);
 	}

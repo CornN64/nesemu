@@ -132,7 +132,7 @@ char *menuText[10] = {
     " .",
     "These cause lag.",
     "Horiz Scale 1 5.",
-    "Vert Scale  3 7.",
+    "Progressive 3 7.",
     " .",
     "*"};
 bool arrow[9][9] = {{0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -279,9 +279,9 @@ static uint16_t IRAM_ATTR renderInGameMenu(int x, int y, uint16_t x1, uint16_t y
             return RED;
         break;
     case VERT_SCALE:
-		if (yStr && enabled[yy][xx])
+		if (getUpdateMode() && enabled[yy][xx])
             return GREEN;
-        else if (!yStr && disabled[yy][xx])
+        else if (!getUpdateMode() && disabled[yy][xx])
             return RED;
         break;
     case BRIGHTNESS:
@@ -372,19 +372,19 @@ static int lastShowMenu = 0;
 #ifdef USE_SPI_DMA
 extern spi_device_handle_t _spi;
 static spi_transaction_t trans;
+bool first_frame = 1;
 
-#ifdef INTERLACED_FRAMES
-#define NUM_LINES 1
-uint16_t DMA_buf[2][NUM_LINES * SCREEN_WIDTH];	//DMA double buffer for X lines on screen
+#define NUM_ILINES 1
+#define NUM_PLINES 6
+uint16_t DMA_buf[2][NUM_PLINES * SCREEN_WIDTH];	//DMA double buffer for X lines on screen
 //**********************************************************************************************************************************
 // DMA writes an interlaced frame (even/odd lines) to the TFT one line at the time //Corn 
 //**********************************************************************************************************************************
-void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const uint16_t width, const uint16_t height, const uint8_t *data[], bool xStr)
+void IRAM_ATTR ili9341_write_Iframe(const uint16_t xs, const uint16_t ys, const uint16_t width, const uint16_t height, const uint8_t *data[], bool xStr)
 {
 	if (data == NULL)
 		return;
 	
-	static bool first_frame = 1;
 	static bool interlace = 0;
 	int act = 0;
 	int i, x, y;
@@ -456,7 +456,7 @@ void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const u
 		memset(&trans, 0, sizeof(spi_transaction_t));
 		trans.user = (void *)1;					//Data mode
 		trans.tx_buffer = (uint8_t*)DMA_buf[act];	//finally send the line data
-		trans.length = NUM_LINES * width * 16;			//Data length, in bits
+		trans.length = NUM_ILINES * width * 16;			//Data length, in bits
 		trans.flags = 0;						//SPI_TRANS_USE_TXDATA flag
 
 		//spi_device_polling_transmit(_spi, &trans);
@@ -479,21 +479,16 @@ void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const u
 #endif	
 }
 
-#else	//INTERLACED_FRAMES
-
-#define NUM_LINES 6
-uint16_t DMA_buf[2][NUM_LINES * SCREEN_WIDTH];	//DMA double buffer for X lines on screen
 //**********************************************************************************************************************************
 //Using DMA to write a whole frame to the TFT 6 lines at the time //Corn 
 //**********************************************************************************************************************************
-void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const uint16_t width, uint16_t height, const uint8_t *data[], bool xStr)
+void IRAM_ATTR ili9341_write_Pframe(const uint16_t xs, const uint16_t ys, const uint16_t width, uint16_t height, const uint8_t *data[], bool xStr)
 {
 	if (data == NULL)
 		return;
 	
 	height -= 2;	//need to reduce screen by 2 lines to make it evenly divisable with 6 (assuming 224 is the height)
 	
-	static bool first_frame = 1;
 	int act = 0;
 	int i, x, y;
 	uint16_t x1, y1;
@@ -533,7 +528,7 @@ void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const u
 	GPIO.out_w1ts = dc;
 
 	//Transfer from NES palette to RGB565 and move to DMA buffer six lines at the time.
-	for (y = ys; y < height+ys; y+=NUM_LINES)
+	for (y = ys; y < height+ys; y+=NUM_PLINES)
 	{
 		if (getShowMenu())
 		{
@@ -579,7 +574,7 @@ void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const u
 		memset(&trans, 0, sizeof(spi_transaction_t));
 		trans.user = (void *)1;					//Data mode
 		trans.tx_buffer = (uint8_t*)DMA_buf[act];	//finally send the line data
-		trans.length = NUM_LINES * width * 16;			//Data length, in bits
+		trans.length = NUM_PLINES * width * 16;			//Data length, in bits
 		trans.flags = 0;						//SPI_TRANS_USE_TXDATA flag
 
 		//spi_device_polling_transmit(_spi, &trans);
@@ -598,15 +593,13 @@ void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const u
         LCD_BKG_OFF();
 #endif	
 }
-#endif	//INTERLACED_FRAMES
 
-#else //USE_SPI_DMA
+#else //NOT USE_SPI_DMA
 
-#ifdef INTERLACED_FRAMES
 //**********************************************************************************************************************************
 //The CPU writes an interlaced frame (even/odd lines) to the TFT in 32 16bit pixel chunks making sure to minimize wating time //Corn 
 //**********************************************************************************************************************************
-void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const uint16_t width, const uint16_t height, const uint8_t *data[], bool xStr)
+void IRAM_ATTR ili9341_write_Iframe(const uint16_t xs, const uint16_t ys, const uint16_t width, const uint16_t height, const uint8_t *data[], bool xStr)
 {
     static bool interlace = 0;
 	int i, x, y;
@@ -749,12 +742,10 @@ void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const u
 #endif
 }
 
-#else	//INTERLACED_FRAMES
-
 //**********************************************************************************************************************************
 //The CPU writes the whole frame to the TFT in 32 16bit pixel chunks making sure to minimize wating time //Corn 
 //**********************************************************************************************************************************
-void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const uint16_t width, const uint16_t height, const uint8_t *data[], bool xStr)
+void IRAM_ATTR ili9341_write_Pframe(const uint16_t xs, const uint16_t ys, const uint16_t width, const uint16_t height, const uint8_t *data[], bool xStr)
 {
     int i, x, y;
     uint16_t x1, y1, evenPixel, oddPixel;
@@ -891,7 +882,6 @@ void IRAM_ATTR ili9341_write_frame(const uint16_t xs, const uint16_t ys, const u
         LCD_BKG_OFF();
 #endif
 }
-#endif //INTERLACED_FRAMES
 #endif	//USE_SPI_DMA
 
 #ifdef FULL_SCREEN
