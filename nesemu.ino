@@ -13,7 +13,6 @@
 ** ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 ** SOFTWARE.
 */
-//#pragma GCC diagnostic warning "-fpermissive"
  
 #include "freertos/FreeRTOS.h"
 #include "esp_system.h"
@@ -45,13 +44,6 @@ extern char *selectedRomFilename = "/spiffs/unknown.nes";
 extern char *selectedRomFilename;
 #endif
 
-#define ASSERT_ESP_OK(returnCode, message)                        \
-  if (returnCode != ESP_OK)                                       \
-  {                                                               \
-    printf("%s. (%s)\n", message, esp_err_to_name(returnCode));   \
-    return returnCode;                                            \
-  }
-
 esp_err_t event_handler(void *ctx, system_event_t *event)
 {
   return ESP_OK;
@@ -75,11 +67,10 @@ esp_err_t registerSdCard()
   };
 
   sdmmc_card_t *card;
-  esp_err_t ret = esp_vfs_fat_sdmmc_mount("/spiffs", &host, &slot_config, &mount_config, &card);	//!TODO: Evil hack... don't use spiffs here!
-  ASSERT_ESP_OK(ret, "Failed to mount SD card");
+  esp_err_t ret = esp_vfs_fat_sdmmc_mount("/spiffs", &host, &slot_config, &mount_config, &card);
 
   // Card has been initialized, print its properties
-  sdmmc_card_print_info(stdout, card);
+  if (!ret) sdmmc_card_print_info(stdout, card);
 
   return ret;
 }
@@ -97,7 +88,6 @@ esp_err_t registerSpiffs()
 
   esp_err_t ret = esp_vfs_spiffs_register(&conf);
 
-  ASSERT_ESP_OK(ret, "Failed to mount SPIFFS partition.");
   struct stat st;
   if (stat(ROM_LIST, &st) != 0)
   {
@@ -114,9 +104,15 @@ void setup()
 
 #ifdef CONFIG_SD_CARD
   vTaskDelay(300 / portTICK_RATE_MS); //a small delay to let SD card power up
-  registerSdCard();
+  if (registerSdCard()) {
+    printf("Failed to mount SD card\n");
+    while(1) vTaskDelay(1); //stop
+  }
 #else
-  registerSpiffs();
+  if (registerSpiffs()) {
+    printf("Failed to mount SPIFFS partition\n");
+    while(1) vTaskDelay(1); //stop
+  }
 #endif
 
   ControllerInit();
@@ -135,5 +131,5 @@ void loop() {
   printf("NoFrendo start!\n");
   nofrendo_main(0, NULL);
   printf("Ops...NoFrendo died?!\n");
-  //asm("break.n 1");
+  while(1) vTaskDelay(1); //stop
 }
