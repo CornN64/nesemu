@@ -245,7 +245,6 @@ static void free_write(int num_dirties, rect_t *dirty_rects)
 }
 
 volatile bitmap_t *_bmp = NULL;	//used to pass info between cores
-volatile bool _bmp_inited = false; //used to pass info between cores
 static void custom_blit(bitmap_t *bmp, int num_dirties, rect_t *dirty_rects)
 {
 #ifdef RUN_VIDEO_AS_TASK
@@ -254,7 +253,6 @@ static void custom_blit(bitmap_t *bmp, int num_dirties, rect_t *dirty_rects)
 		do_audio_frame();
 	#else
 		_bmp = bmp;
-		_bmp_inited = true;
 		do_audio_frame();
 	#endif
 #else
@@ -302,7 +300,7 @@ static void IRAM_ATTR videoTask(void *arg)
 	{
 		xWidth = getXStretch() ? SCREEN_WIDTH : NES_WIDTH;
 		x = (SCREEN_WIDTH - xWidth) >> 1;
-		if (last_ticks != nofrendo_ticks && _bmp_inited)
+		if (last_ticks != nofrendo_ticks && _bmp)
 		{
 			last_ticks = nofrendo_ticks;
 			if (getUpdateMode())

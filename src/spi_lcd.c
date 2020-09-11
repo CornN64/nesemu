@@ -372,7 +372,6 @@ static int lastShowMenu = 0;
 #ifdef USE_SPI_DMA
 extern spi_device_handle_t _spi;
 static spi_transaction_t trans;
-bool first_frame = 1;
 
 #define NUM_ILINES 1
 #define NUM_PLINES 6
@@ -403,7 +402,7 @@ void IRAM_ATTR ili9341_write_Iframe(const uint16_t xs, const uint16_t ys, const 
 	uint32_t xStart = xTaskGetTickCount();	//SPI time
 #endif
 
-	if (!first_frame) spi_device_polling_end(_spi, &trans);	//make sure previous frame DMA is done
+	if (trans.tx_buffer) spi_device_polling_end(_spi, &trans);	//make sure previous frame DMA is done
 
 	//setup LCD SPI frame push
 	x1 = xs + (width - 1);
@@ -466,8 +465,6 @@ void IRAM_ATTR ili9341_write_Iframe(const uint16_t xs, const uint16_t ys, const 
 
 	interlace ^= 1;
 	
-	first_frame = 0;
-	
 #ifdef SHOW_SPI_TRANSFER_TIME
 	printf("%d\n", xTaskGetTickCount() - xStart);	//show frame transfer time in ms
 #endif
@@ -506,7 +503,7 @@ void IRAM_ATTR ili9341_write_Pframe(const uint16_t xs, const uint16_t ys, const 
 	uint32_t xStart = xTaskGetTickCount();	//SPI time
 #endif
 
-	if (!first_frame) spi_device_polling_end(_spi, &trans);	//make sure previous frame DMA is done
+	if (trans.tx_buffer) spi_device_polling_end(_spi, &trans);	//make sure previous frame DMA is done
 
 	//setup LCD SPI frame push
 	x1 = xs + (width - 1);
@@ -582,7 +579,6 @@ void IRAM_ATTR ili9341_write_Pframe(const uint16_t xs, const uint16_t ys, const 
 		act ^=1;	//Swap DMA buffers
 	}
 	
-	first_frame = 0;
 #ifdef SHOW_SPI_TRANSFER_TIME
 	printf("%d\n", xTaskGetTickCount() - xStart);	//show frame transfer time in ms
 #endif

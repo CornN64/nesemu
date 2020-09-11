@@ -15,6 +15,7 @@
 */
  
 #include "freertos/FreeRTOS.h"
+//#include <WiFi.h>
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_event_loop.h"
@@ -25,7 +26,7 @@
 #include "esp_spiffs.h"
 //#include "esp_int_wdt.h"
 //#include "esp_task_wdt.h"
-#include "esp_bt.h"
+//#include "esp_bt.h"
 #include "soc/rtc.h"
 //#include "driver/spi_master.h"
 //#include "driver/sdmmc_host.h"
@@ -100,7 +101,9 @@ esp_err_t registerSpiffs()
 void setup()
 {
   rtc_clk_cpu_freq_set(RTC_CPU_FREQ_240M);  //make sure we run at full tilt ;)
-  esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT); //Drop Bluetooth and get some memory back
+  //WiFi.mode( WIFI_OFF );
+  //btStop();
+  //esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT); //Drop Bluetooth and get some memory back
 
 #ifdef CONFIG_SD_CARD
   vTaskDelay(300 / portTICK_RATE_MS); //a small delay to let SD card power up
