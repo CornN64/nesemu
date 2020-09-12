@@ -28,7 +28,7 @@
 #include "../nes.h"
 #include "../log.h"
 #include "../mmc5_snd.h"
-#include "../config.h"
+#include "../../config.h"
 
 /* TODO: there's lots of info about this mapper now;
 ** let's implement it correctly/completely

@@ -39,7 +39,7 @@
 #include "gui.h"
 #include "gui_elem.h"
 #include "vid_drv.h"
-#include "config.h"
+#include "../config.h"
 
 /* TODO: oh god */
 /* 8-bit GUI color table */

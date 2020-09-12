@@ -20,7 +20,7 @@
 #include "freertos/queue.h"
 #include "driver/gpio.h"
 #include "soc/gpio_struct.h"
-#include "config.h"
+#include "../config.h"
 #include "pretty_effect.h"
 #include "esp_deep_sleep.h"
 #include "Controller.h"

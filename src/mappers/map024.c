@@ -28,7 +28,7 @@
 #include "../nes.h"
 #include "../log.h"
 #include "../vrcvisnd.h"
-#include "../config.h"
+#include "../../config.h"
 
 static struct
 {

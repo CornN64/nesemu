@@ -33,7 +33,7 @@
 #include "nes_rom.h"
 #include "nes6502.h"
 #include "bitmap.h"
-#include "config.h"
+#include "../config.h"
 
 /* NTSC = 60Hz, PAL = 50Hz */
 #ifdef PAL

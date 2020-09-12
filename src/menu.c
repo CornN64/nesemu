@@ -19,7 +19,7 @@
 #include "driver/ledc.h"
 #include "esp_spiffs.h"
 #include "menu.h"
-#include "config.h"
+#include "../config.h"
 
 /*
  This code displays some fancy graphics on the 320x240 LCD on an ESP-WROVER_KIT board.

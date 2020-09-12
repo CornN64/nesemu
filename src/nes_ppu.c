@@ -33,7 +33,7 @@
 #include "log.h"
 #include "nes_mmc.h"
 
-#include "config.h"
+#include "../config.h"
 #include "bitmap.h"
 #include "vid_drv.h"
 #include "nes_pal.h"

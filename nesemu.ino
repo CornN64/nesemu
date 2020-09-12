@@ -34,10 +34,11 @@
 #include "driver/gpio.h"
 #include "sdmmc_cmd.h"
 #include "nvs_flash.h"
+
+#include "config.h"
 #include "src/Controller.h"
 #include "src/nofrendo.h"
 #include "src/menu.h"
-#include "src/config.h"
 
 #ifdef SKIP_MENU
 extern char *selectedRomFilename = "/spiffs/unknown.nes";

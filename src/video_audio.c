@@ -34,7 +34,7 @@
 #include "osd.h"
 #include "stdint.h"
 #include "driver/i2s.h"
-#include "config.h"
+#include "../config.h"
 #include "spi_lcd.h"
 #include "Controller.h"
 #include "video_audio.h"

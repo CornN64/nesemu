@@ -14,7 +14,10 @@
 
 #include <string.h>
 #include <stdio.h>
-#include "config.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "driver/periph_ctrl.h"
+#include "driver/spi_master.h"
 #include "rom/ets_sys.h"
 #include "rom/gpio.h"
 #include "soc/gpio_reg.h"
@@ -22,10 +25,7 @@
 #include "soc/gpio_struct.h"
 #include "soc/io_mux_reg.h"
 #include "soc/spi_reg.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "driver/periph_ctrl.h"
-#include "driver/spi_master.h"
+#include "../config.h"
 #include "spi_lcd.h"
 #include "driver/ledc.h"
 #include "nes.h"
