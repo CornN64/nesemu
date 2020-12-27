@@ -208,6 +208,7 @@ static int set_mode(int width, int height)
 }
 
 uint16 myPalette[256];
+uint32 mySpacedPalette[256];
 
 /* copy nes palette over to hardware */
 static void set_palette(rgb_t *pal)
@@ -220,7 +221,10 @@ static void set_palette(rgb_t *pal)
 	{
 		c = (pal[i].b >> 3) + ((pal[i].g >> 2) << 5) + ((pal[i].r >> 3) << 11);
 		//myPalette[i] = c;
-		myPalette[i] = (c >> 8) | (c << 8);	//swizzle bytes order already here in the palette
+		myPalette[i] = (c >> 8) | (c << 8);	//swizzle bytes order already here in the palette lookup
+		//Used for linear up scaling, space out R G & B into a 32bit int so all three componets can be interpolated at once in few operations
+		//The clever idea came from the hacked game and watch scene that does somethign similar //Corn
+		mySpacedPalette[i] = ((0xF800 & c) << 10) | ((0x7E0 & c) << 5) | (0x1F & c);
 	}
 }
 

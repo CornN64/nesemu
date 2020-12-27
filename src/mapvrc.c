@@ -27,7 +27,7 @@
 #include "nes_mmc.h"
 #include "nes.h"
 #include "log.h"
-#include "config.h"
+#include "../config.h"
 
 #define VRC_VBANK(bank, value, high) \
 { \

@@ -28,7 +28,7 @@
 #include <stdarg.h>
 #include "noftypes.h"
 #include "log.h"
-#include "config.h"
+#include "../config.h"
 
 //static FILE *errorlog = NULL;
 static int (*log_func)(const char *string) = NULL;

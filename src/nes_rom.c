@@ -37,7 +37,7 @@
 #include "gui.h"
 #include "log.h"
 #include "osd.h"
-#include "config.h"
+#include "../config.h"
 
 /* Max length for displayed filename */
 #define  ROM_DISP_MAXLEN   20

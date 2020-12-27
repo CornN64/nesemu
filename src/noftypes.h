@@ -22,7 +22,7 @@
 ** Data type definitions
 ** $Id: noftypes.h,v 1.1 2001/04/27 14:37:11 neil Exp $
 */
-#include "config.h"
+#include "../config.h"
 
 #ifndef _TYPES_H_
 #define _TYPES_H_

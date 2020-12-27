@@ -42,7 +42,7 @@
 #include "nes_mmc.h"
 #include "vid_drv.h"
 #include "nofrendo.h"
-#include "config.h"
+#include "../config.h"
 
 #define NES_CLOCK_DIVIDER 12
 //#define  NES_MASTER_CLOCK     21477272.727272727272

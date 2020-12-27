@@ -22,7 +22,7 @@
 ** memory allocation wrapper routines
 ** $Id: memguard.h,v 1.1.1.1 2001/04/27 07:03:54 neil Exp $
 */
-#include "config.h"
+#include "../config.h"
 
 #ifndef  _MEMGUARD_H_
 #define  _MEMGUARD_H_

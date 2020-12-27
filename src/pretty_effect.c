@@ -17,7 +17,7 @@
 #include "esp_deep_sleep.h"
 #include "menu.h"
 #include "Controller.h"
-#include "config.h"
+#include "../config.h"
 
 int splashScreenTimer;
 int colorCycle=0;

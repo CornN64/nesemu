@@ -33,12 +33,17 @@
 //If defined it allows selection in the menu to scale/stretch frame (X axis only) to full screen (with artifacts in scrolling games).
 //It will also be slightly slower with stretch screen enabled due to more data needs to be sent over SPI to the LCD
 //0 -> defaults to not stretched, 1 -> defaults to stretched 
-#define FULL_SCREEN 0
+#define FULL_SCREEN 1
 
-// If defined it will run the SPI transfer to the LCD as a task and which CPU core 0(faster with volatiles) or 1(faster with OS_SEMAPHORE)
+//If defined then screen interpolation is bilinear instead of nerest neighborhor sampling (looks better but uses a little more CPU)
+//This only works in CPU mode and in interlaced mode for the moment
+//Speedy implementation idea from the guys hacking the game and watch console processing all 3 color componets at once almost like vector processing
+#define BILINEAR
+
+// If defined it will run the SPI transfer to the LCD as a separate task and the value indicates which CPU core 0(faster with volatiles) or 1(faster with OS_SEMAPHORE)
 #define RUN_VIDEO_AS_TASK 0
 
-// If defined it will use OS semafores (which seems slower!?) else use simple volatile
+// If defined it will use OS semafores (which seems slower!?) else use simple volatile variables to pass info between tasks
 //#define USE_OS_SEMAPHORES 
 
 // If defined rotate display 180 deg

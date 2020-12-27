@@ -123,6 +123,7 @@ static void LCD_WriteData(const uint8_t data)
 #define U16xtoZ16(m) ((uint32_t)((m >> 8 | (m & 0xFF) << 8)))
 
 extern uint16_t myPalette[];
+extern uint32_t mySpacedPalette[];
 
 char *menuText[10] = {
     "Brightness 46 0.",
@@ -595,6 +596,9 @@ void IRAM_ATTR ili9341_write_Pframe(const uint16_t xs, const uint16_t ys, const 
 //**********************************************************************************************************************************
 //The CPU writes an interlaced frame (even/odd lines) to the TFT in 32 16bit pixel chunks making sure to minimize wating time //Corn 
 //**********************************************************************************************************************************
+//#define CONV(_c) ((0xF800 & (_c >> 10)) | (0x7E0 & (_c >> 5)) | (0x1F & _c))	//repack to RGB565 non swizzled
+#define CONV(_c) ((0xF8 & (_c >> 18)) | (0x7 & (_c >> 13)) | (0xE000 & (_c >> 3)) | ((0x1F & _c)<<8))	//repack to RGB565 swizzled
+
 void IRAM_ATTR ili9341_write_Iframe(const uint16_t xs, const uint16_t ys, const uint16_t width, const uint16_t height, const uint8_t *data[], bool xStr)
 {
     static bool interlace = 0;
@@ -629,100 +633,243 @@ void IRAM_ATTR ili9341_write_Iframe(const uint16_t xs, const uint16_t ys, const 
 	GPIO.out_w1ts = dc;
 	spiWrite(31, xv);
 
-	for (y = ys+interlace; y < height+ys; y+=2)
-    {
-		waitForSPIReady();	//Wait for previous transfer to finish
-		yv = U16x2toU32(y, y);
-		GPIO.out_w1tc = dc;
-		spiWrite(7, 0x2b);	// Set row (command 0x2B - page address) to Y start
-		GPIO.out_w1ts = dc;
-		spiWrite(31, yv);
-		GPIO.out_w1tc = dc;
-		spiWrite(7, 0x2c);	// Send memory write command (command 0x2C)
-		GPIO.out_w1ts = dc;
-		SET_PERI_REG_BITS(SPI_MOSI_DLEN_REG(SPI_NUM), SPI_USR_MOSI_DBITLEN, 511, SPI_USR_MOSI_DBITLEN_S);
+#ifdef BILINEAR && FULLSCREEN	//Up scales image from 256 pixels to 320 pixles with linear interpolation
+	if (xStr & lastShowMenu==0)	//only do this for the game screen
+	{
+		for (y = ys+interlace; y < height+ys; y+=2)
+		{
+			waitForSPIReady();	//Wait for previous transfer to finish
+			yv = U16x2toU32(y, y);
+			GPIO.out_w1tc = dc;
+			spiWrite(7, 0x2b);	// Set row (command 0x2B - page address) to Y start
+			GPIO.out_w1ts = dc;
+			spiWrite(31, yv);
+			GPIO.out_w1tc = dc;
+			spiWrite(7, 0x2c);	// Send memory write command (command 0x2C)
+			GPIO.out_w1ts = dc;
+			SET_PERI_REG_BITS(SPI_MOSI_DLEN_REG(SPI_NUM), SPI_USR_MOSI_DBITLEN, 479, SPI_USR_MOSI_DBITLEN_S);
+	
+			x = 0;
+			uint8* src_ptr = data[y];
+			int num_pxl = 30*10;	//ToDo render whole screen
+			while (x < num_pxl)
+			{
+				//up sample 240 pixels to 300 pixels
+				uint32 C0 = mySpacedPalette[*src_ptr++];
+				uint32 C1 = mySpacedPalette[*src_ptr++];
+				uint32 C2 = mySpacedPalette[*src_ptr++];
+				uint32 C3 = mySpacedPalette[*src_ptr++];
+				temp[0] =  CONV(C0) | (CONV((C0+C1+C1+C1)>>2) << 16);
+				temp[1] =  CONV((C1+C2)>>1) | (CONV((C2+C2+C2+C3)>>2) << 16);
+				C0 = mySpacedPalette[*src_ptr++];
+				temp[2] =  CONV(C3) | (CONV(C0) << 16);
+				C1 = mySpacedPalette[*src_ptr++];
+				C2 = mySpacedPalette[*src_ptr++];
+				C3 = mySpacedPalette[*src_ptr++];
+				temp[3] =  CONV((C0+C1+C1+C1)>>2) | (CONV((C1+C2)>>1) << 16);
+				temp[4] =  CONV((C2+C2+C2+C3)>>2) | (CONV(C3) << 16);
+				C0 = mySpacedPalette[*src_ptr++];
+				C1 = mySpacedPalette[*src_ptr++];
+				C2 = mySpacedPalette[*src_ptr++];
+				C3 = mySpacedPalette[*src_ptr++];
+				temp[5] =  CONV(C0) | (CONV((C0+C1+C1+C1)>>2) << 16);
+				temp[6] =  CONV((C1+C2)>>1) | (CONV((C2+C2+C2+C3)>>2) << 16);
+				C0 = mySpacedPalette[*src_ptr++];
+				temp[7] =  CONV(C3) | (CONV(C0) << 16);
+				C1 = mySpacedPalette[*src_ptr++];
+				C2 = mySpacedPalette[*src_ptr++];
+				C3 = mySpacedPalette[*src_ptr++];
+				temp[8] =  CONV((C0+C1+C1+C1)>>2) | (CONV((C1+C2)>>1) << 16);
+				temp[9] =  CONV((C2+C2+C2+C3)>>2) | (CONV(C3) << 16);
+				C0 = mySpacedPalette[*src_ptr++];
+				C1 = mySpacedPalette[*src_ptr++];
+				C2 = mySpacedPalette[*src_ptr++];
+				C3 = mySpacedPalette[*src_ptr++];
+				temp[10] =  CONV(C0) | (CONV((C0+C1+C1+C1)>>2) << 16);
+				temp[11] =  CONV((C1+C2)>>1) | (CONV((C2+C2+C2+C3)>>2) << 16);
+				C0 = mySpacedPalette[*src_ptr++];
+				temp[12] =  CONV(C3) | (CONV(C0) << 16);
+				C1 = mySpacedPalette[*src_ptr++];
+				C2 = mySpacedPalette[*src_ptr++];
+				C3 = mySpacedPalette[*src_ptr++];
+				temp[13] =  CONV((C0+C1+C1+C1)>>2) | (CONV((C1+C2)>>1) << 16);
+				temp[14] =  CONV((C2+C2+C2+C3)>>2) | (CONV(C3) << 16);
+				x += 30;	//each chunk renders 30 pixels
+		
+				//Special trick here so we can patially fill the SPI TX buffer and start the transfer early //Corn
+				taskDISABLE_INTERRUPTS();	//globally disable all maskable interrupts
+				
+				waitForSPIReady();	//Wait for previous transfer to finish
+				
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 0), temp[0]);
+				SET_PERI_REG_MASK(SPI_CMD_REG(SPI_NUM), SPI_USR);	//Start SPI transfer early and continue to fill the SPI TX buffer to save time
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 4), temp[1]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 8), temp[2]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 12), temp[3]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 16), temp[4]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 20), temp[5]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 24), temp[6]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 28), temp[7]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 32), temp[8]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 36), temp[9]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 40), temp[10]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 44), temp[11]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 48), temp[12]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 52), temp[13]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 56), temp[14]);
+		
+				taskENABLE_INTERRUPTS();	//globally enable all maskable interrupts
+			}
 
-		x = 0;
-        while (x < width)
-        {
-            // Render 32 pixels, grouped as pairs of 16-bit pixels stored in 32-bit values
-			if (getShowMenu())
-			{
-				for (i = 0; i < 16; i++)
-                {
-                    evenPixel = oddPixel = renderInGameMenu(xs ? x+32 : x, y, 0, 0, xStr);
-					temp[i] = U16x2toU32(evenPixel, oddPixel);
-					x+=2;
-                }
-			}
-#ifdef FULL_SCREEN
-			else if (xStr)			
-			{
-				//Color from palette is already byte swizzled
-				temp[0] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[1] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[2] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[3] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[4] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[5] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[6] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[7] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[8] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[9] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[10] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[11] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[12] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[13] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[14] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-				temp[15] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
-			}
-#endif			
-			else
-			{	//Color from palette is already byte swizzled
-				temp[0] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[1] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[2] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[3] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[4] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[5] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[6] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[7] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[8] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[9] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[10] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[11] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[12] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[13] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[14] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[15] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-            }
+			//up scale last 16 pixels to 20 pixels in a row
+			uint32 C0 = mySpacedPalette[*src_ptr++];
+			uint32 C1 = mySpacedPalette[*src_ptr++];
+			uint32 C2 = mySpacedPalette[*src_ptr++];
+			uint32 C3 = mySpacedPalette[*src_ptr++];
+			temp[0] =  CONV(C0) | (CONV((C0+C1+C1+C1)>>2) << 16);
+			temp[1] =  CONV((C1+C2)>>1) | (CONV((C2+C2+C2+C3)>>2) << 16);
+			C0 = mySpacedPalette[*src_ptr++];
+			temp[2] =  CONV(C3) | (CONV(C0) << 16);
+			C1 = mySpacedPalette[*src_ptr++];
+			C2 = mySpacedPalette[*src_ptr++];
+			C3 = mySpacedPalette[*src_ptr++];
+			temp[3] =  CONV((C0+C1+C1+C1)>>2) | (CONV((C1+C2)>>1) << 16);
+			temp[4] =  CONV((C2+C2+C2+C3)>>2) | (CONV(C3) << 16);
+			C0 = mySpacedPalette[*src_ptr++];
+			C1 = mySpacedPalette[*src_ptr++];
+			C2 = mySpacedPalette[*src_ptr++];
+			C3 = mySpacedPalette[*src_ptr++];
+			temp[5] =  CONV(C0) | (CONV((C0+C1+C1+C1)>>2) << 16);
+			temp[6] =  CONV((C1+C2)>>1) | (CONV((C2+C2+C2+C3)>>2) << 16);
+			C0 = mySpacedPalette[*src_ptr++];
+			temp[7] =  CONV(C3) | (CONV(C0) << 16);
+			C1 = mySpacedPalette[*src_ptr++];
+			C2 = mySpacedPalette[*src_ptr++];
+			C3 = mySpacedPalette[*src_ptr++];
+			temp[8] =  CONV((C0+C1+C1+C1)>>2) | (CONV((C1+C2)>>1) << 16);
+			temp[9] =  CONV((C2+C2+C2+C3)>>2) | (CONV(C3) << 16);
 	
 			//Special trick here so we can patially fill the SPI TX buffer and start the transfer early //Corn
 			taskDISABLE_INTERRUPTS();	//globally disable all maskable interrupts
-            
+			
 			waitForSPIReady();	//Wait for previous transfer to finish
 			
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 0), temp[0]);
-            SET_PERI_REG_MASK(SPI_CMD_REG(SPI_NUM), SPI_USR);	//Start SPI transfer early and continue to fill the SPI TX buffer to save time
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 4), temp[1]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 8), temp[2]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 12), temp[3]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 16), temp[4]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 20), temp[5]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 24), temp[6]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 28), temp[7]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 32), temp[8]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 36), temp[9]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 40), temp[10]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 44), temp[11]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 48), temp[12]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 52), temp[13]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 56), temp[14]);
-            WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 60), temp[15]);
-			
+			SET_PERI_REG_BITS(SPI_MOSI_DLEN_REG(SPI_NUM), SPI_USR_MOSI_DBITLEN, 319, SPI_USR_MOSI_DBITLEN_S);
+			WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 0), temp[0]);
+			SET_PERI_REG_MASK(SPI_CMD_REG(SPI_NUM), SPI_USR);	//Start SPI transfer early and continue to fill the SPI TX buffer to save time
+			WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 4), temp[1]);
+			WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 8), temp[2]);
+			WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 12), temp[3]);
+			WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 16), temp[4]);
+			WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 20), temp[5]);
+			WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 24), temp[6]);
+			WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 28), temp[7]);
+			WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 32), temp[8]);
+			WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 36), temp[9]);
+	
 			taskENABLE_INTERRUPTS();	//globally enable all maskable interrupts
-        }
-    }
+		}
+	}
+	else
+#endif			
+	{
+		for (y = ys+interlace; y < height+ys; y+=2)
+		{
+			waitForSPIReady();	//Wait for previous transfer to finish
+			yv = U16x2toU32(y, y);
+			GPIO.out_w1tc = dc;
+			spiWrite(7, 0x2b);	// Set row (command 0x2B - page address) to Y start
+			GPIO.out_w1ts = dc;
+			spiWrite(31, yv);
+			GPIO.out_w1tc = dc;
+			spiWrite(7, 0x2c);	// Send memory write command (command 0x2C)
+			GPIO.out_w1ts = dc;
+			SET_PERI_REG_BITS(SPI_MOSI_DLEN_REG(SPI_NUM), SPI_USR_MOSI_DBITLEN, 511, SPI_USR_MOSI_DBITLEN_S);	//32*16-1 = 511 bits
+	
+			x = 0;
+			uint8* src_ptr = data[y];
+			while (x < width)
+			{
+				// Render 32 pixels, grouped as pairs of 16-bit pixels stored in 32-bit values
+				if (getShowMenu())
+				{
+					for (i = 0; i < 16; i++)
+					{
+						evenPixel = oddPixel = renderInGameMenu(xs ? x+32 : x, y, 0, 0, xStr);
+						temp[i] = U16x2toU32(evenPixel, oddPixel);
+						x+=2;
+					}
+				}
+#ifdef FULL_SCREEN
+				else if (xStr)			
+				{
+					//Color from palette is already byte swizzled
+					temp[0] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[1] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[2] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[3] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[4] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[5] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[6] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[7] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[8] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[9] =  myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[10] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[11] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[12] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[13] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[14] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+					temp[15] = myPalette[data[y][scaleX[x++]]] | (myPalette[data[y][scaleX[x++]]] << 16);
+				}
+#endif			
+				else
+				{	//Color from palette is already byte swizzled
+					temp[0] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[1] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[2] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[3] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[4] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[5] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[6] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[7] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[8] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[9] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[10] = myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[11] = myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[12] = myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[13] = myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[14] = myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					temp[15] = myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+					x += 32;
+				}
+		
+				//Special trick here so we can patially fill the SPI TX buffer and start the transfer early //Corn
+				taskDISABLE_INTERRUPTS();	//globally disable all maskable interrupts
+				
+				waitForSPIReady();	//Wait for previous transfer to finish
+				
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 0), temp[0]);
+				SET_PERI_REG_MASK(SPI_CMD_REG(SPI_NUM), SPI_USR);	//Start SPI transfer early and continue to fill the SPI TX buffer to save time
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 4), temp[1]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 8), temp[2]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 12), temp[3]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 16), temp[4]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 20), temp[5]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 24), temp[6]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 28), temp[7]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 32), temp[8]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 36), temp[9]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 40), temp[10]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 44), temp[11]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 48), temp[12]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 52), temp[13]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 56), temp[14]);
+				WRITE_PERI_REG((SPI_W0_REG(SPI_NUM) + 60), temp[15]);
+		
+				taskENABLE_INTERRUPTS();	//globally enable all maskable interrupts
+			}
+		}
+	}
 
 	interlace ^= 1;
 	
@@ -786,6 +933,7 @@ void IRAM_ATTR ili9341_write_Pframe(const uint16_t xs, const uint16_t ys, const 
 	for (y = ys; y < height+ys; y++)
     {
         x = 0;
+		uint8* src_ptr = data[y];
         while (x < width)
         {
             // Render 32 pixels, grouped as pairs of 16-bit pixels stored in 32-bit values
@@ -822,22 +970,23 @@ void IRAM_ATTR ili9341_write_Pframe(const uint16_t xs, const uint16_t ys, const 
 #endif			
 			else
 			{	//Color from palette is already byte swizzled
-				temp[0] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[1] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[2] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[3] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[4] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[5] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[6] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[7] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[8] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[9] =  myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[10] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[11] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[12] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[13] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[14] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
-				temp[15] = myPalette[data[y][x++]] | (myPalette[data[y][x++]] << 16);
+				temp[0] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[1] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[2] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[3] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[4] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[5] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[6] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[7] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[8] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[9] =  myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[10] = myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[11] = myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[12] = myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[13] = myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[14] = myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				temp[15] = myPalette[*src_ptr++] | (myPalette[*src_ptr++] << 16);
+				x += 32;
             }
 	
 			//Special trick here so we can patially fill the SPI TX buffer and start the transfer early //Corn
