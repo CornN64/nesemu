@@ -433,12 +433,12 @@ void nes_emulate(void)
       {
 		 frames_to_render = 0;
 #ifdef SHOW_RENDER_VIDEO_TIME
-		 uint xF = xTaskGetTickCount();	//SPI time
+		 uint xF = micros();	//SPI time
          nes_renderframe(true);
-		 uint xN = xTaskGetTickCount();	//SPI time
+		 uint xN = micros();	//SPI time
          system_video(true);
-		 uint xE = xTaskGetTickCount();	//SPI time
-		 printf("%d\t%d\n", xN - xF, xE - xN);	//show render and video push time in ms
+		 uint xE = micros();	//SPI time
+		 printf("%d\t%d\n", xN - xF, xE - xN);	//show render and video push time in us
 #else
          nes_renderframe(true);
          system_video(true);

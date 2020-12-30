@@ -56,8 +56,8 @@
 //#define NOFRENDO_DEBUG
 //#define MEMORY_DEBUG
 //#define MAPPER_DEBUG
-//#define SHOW_SPI_TRANSFER_TIME	//in milli seconds
-//#define SHOW_RENDER_VIDEO_TIME	//in milli seconds
+//#define SHOW_SPI_TRANSFER_TIME	//in micro seconds
+//#define SHOW_RENDER_VIDEO_TIME	//in micro seconds
 
 //Define and it will directly boot the ROM from the list
 //#define BOOT_ROM 0   

@@ -70,8 +70,9 @@ you'll need hit the reset button on your ESP32 module or power cycle the ESP32.
 
 ## Options
 The file config.h in the top directory contains a few options and settings as well as the ESP32 pin mapping. Note that the LCD needs to use the VSPI interface to work fast/properly, additionally there is an option to rotate the screen 180 deg.
+The screen is up scaled (256->320 pixels) with either crude nearest sample or bilinear (the x axis up scaling can be turned on and off in the in game menu select + left). Due to some coding tricks bilinaer is just as fast as the more crude nearest sample but bilinear looks much better. Y axis is not scale at all.
 The default way to update the screen is in interlaced mode (odd/even lines as opposed to progressive, full screen update) using the CPU/SPI buffer. This will allow the refreshrate to hit 60FPS even with the screen stretched along the x-axis.
-There are options to use DMA but in its current form there is no speed benefit. ROMs can be put on the SD card (formatted as FAT) with 8.3 file names and then mapped to the file menu with the "roms.txt" file that also needs to be in the root dir of the SD card.
+There are options to use DMA but in its current form there is no speed benefit over the CPU. ROMs can be put on the SD card (formatted as FAT) with 8.3 file names and then mapped to the file menu with the "roms.txt" file that also needs to be in the root dir of the SD card.
 Note that the selected ROM gets memory mapped in the internal EEPROM of the ESP32 which means some wearing on its finite amount of write cycles (100k writes?). If the same ROM is selected after reset or power on then
 only a verify (no write) will take place to make sure the data is intact. This will then avoid a rewrite of the ROM image to the EEPROM.
 
