@@ -276,12 +276,12 @@ static void custom_blit(bitmap_t *bmp, int num_dirties, rect_t *dirty_rects)
 #ifdef RUN_VIDEO_AS_TASK
 static void IRAM_ATTR videoTask(void *arg)
 {
-#ifdef USE_OS_SEMAPHORES
 	int x, y, xWidth, yHight;	
 	bitmap_t *bmp = NULL;
 	yHight = NES_VIS_LINES;
 	y = (SCREEN_HEIGHT - yHight) >> 1;
-	
+
+#ifdef USE_OS_SEMAPHORES
 	while (true)
 	{
 		xWidth = getXStretch() ? SCREEN_WIDTH : NES_WIDTH;
@@ -293,24 +293,20 @@ static void IRAM_ATTR videoTask(void *arg)
 			ili9341_write_Iframe(x, y, xWidth, yHight, (const uint8_t **)bmp->line, getXStretch());
 	}
 #else
-	int last_ticks;
-	int x, y, xWidth, yHight;	
-	bitmap_t *bmp = NULL;
-	yHight = NES_VIS_LINES;
-	y = (SCREEN_HEIGHT - yHight) >> 1;
-	last_ticks = nofrendo_ticks;
-	
-	while (1)
+	int last_ticks = nofrendo_ticks;
+	while (true)
 	{
 		xWidth = getXStretch() ? SCREEN_WIDTH : NES_WIDTH;
 		x = (SCREEN_WIDTH - xWidth) >> 1;
 		if (last_ticks != nofrendo_ticks && _bmp)
 		{
 			last_ticks = nofrendo_ticks;
+			bmp = _bmp;
+			_bmp = NULL;
 			if (getUpdateMode())
-				ili9341_write_Pframe(x, y, xWidth, yHight, (const uint8_t **)_bmp->line, getXStretch());
+				ili9341_write_Pframe(x, y, xWidth, yHight, (const uint8_t **)bmp->line, getXStretch());
 			else
-				ili9341_write_Iframe(x, y, xWidth, yHight, (const uint8_t **)_bmp->line, getXStretch());
+				ili9341_write_Iframe(x, y, xWidth, yHight, (const uint8_t **)bmp->line, getXStretch());
 		}
 		else vTaskDelay(1);
 	}
