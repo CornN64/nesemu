@@ -254,11 +254,10 @@ static void custom_blit(bitmap_t *bmp, int num_dirties, rect_t *dirty_rects)
 #ifdef RUN_VIDEO_AS_TASK
 	#ifdef USE_OS_SEMAPHORES
 		xQueueSend(vidQueue, &bmp, 0);
-		do_audio_frame();
 	#else
 		_bmp = bmp;
-		do_audio_frame();
 	#endif
+	do_audio_frame();
 #else
 	do_audio_frame();
 	int x, y, xWidth, yHight;
@@ -293,14 +292,12 @@ static void IRAM_ATTR videoTask(void *arg)
 			ili9341_write_Iframe(x, y, xWidth, yHight, (const uint8_t **)bmp->line, getXStretch());
 	}
 #else
-	int last_ticks = nofrendo_ticks;
 	while (true)
 	{
 		xWidth = getXStretch() ? SCREEN_WIDTH : NES_WIDTH;
 		x = (SCREEN_WIDTH - xWidth) >> 1;
-		if (last_ticks != nofrendo_ticks && _bmp)
+		if (_bmp)
 		{
-			last_ticks = nofrendo_ticks;
 			bmp = _bmp;
 			_bmp = NULL;
 			if (getUpdateMode())

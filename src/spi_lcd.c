@@ -734,7 +734,7 @@ void IRAM_ATTR ili9341_write_Iframe(const uint16_t xs, const uint16_t ys, const 
 	
 			x = 0;
 			uint8* src_ptr = data[y];
-			int num_pxl = 30*10;	//ToDo render whole screen
+			int num_pxl = 30*10;	//The loop can only render 300 out of 320 pixels. Last 20 pixels are done outside the loop
 			while (x < num_pxl)
 			{
 				//up sample 240 pixels to 300 pixels
@@ -1022,7 +1022,7 @@ void IRAM_ATTR ili9341_write_Pframe(const uint16_t xs, const uint16_t ys, const 
 
 			x = 0;
 			uint8* src_ptr = data[y];
-			int num_pxl = 30*10;	//ToDo render whole screen
+			int num_pxl = 30*10;	//The loop can only render 300 out of 320 pixels. Last 20 pixels are done outside the loop  
 			while (x < num_pxl)
 			{
 				//up sample 240 pixels to 300 pixels
