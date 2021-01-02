@@ -292,12 +292,14 @@ static void IRAM_ATTR videoTask(void *arg)
 			ili9341_write_Iframe(x, y, xWidth, yHight, (const uint8_t **)bmp->line, getXStretch());
 	}
 #else
+	int last_ticks = nofrendo_ticks;
 	while (true)
 	{
 		xWidth = getXStretch() ? SCREEN_WIDTH : NES_WIDTH;
 		x = (SCREEN_WIDTH - xWidth) >> 1;
-		if (_bmp)
+		if (last_ticks != nofrendo_ticks && _bmp)
 		{
+			last_ticks = nofrendo_ticks;
 			bmp = _bmp;
 			_bmp = NULL;
 			if (getUpdateMode())
