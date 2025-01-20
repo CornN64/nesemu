@@ -213,9 +213,9 @@ static bool textEnd;
     SET_PERI_REG_MASK(SPI_CMD_REG(SPI_NUM), SPI_USR);                                                      \
     waitForSPIReady();
 
-#define RED (31<<11)	
-#define GREEN (63<<5)
-#define BLUE (0x0F)
+#define RED   (0x1F<<11)	
+#define GREEN (0x3F<<5)
+#define BLUE  (0x0F)
 #define LBLUE (0x3333)	
 #define WHITE (0xFFFF)	
 	

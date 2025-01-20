@@ -36,9 +36,13 @@
 #define FULL_SCREEN 1
 
 //If defined then screen interpolation is bilinear instead of nerest neighborhor sampling (looks better but uses a little more CPU)
-//This only works in CPU mode and in interlaced mode for the moment
+//Using interlaced mode still guarantee 60FPS
 //Speedy implementation idea from the guys hacking the game and watch console processing all 3 color componets at once almost like vector processing
 #define BILINEAR
+
+//Allowing all 64 sprites on a scan line will remove flicker and work on most games
+//#define NES_MAX_SPRITES 8 //Default max sprites on a scan line
+#define NES_MAX_SPRITES 64 //Hack to removing NES sprite limitation
 
 // If defined it will run the SPI transfer to the LCD as a separate task and the value indicates which CPU core 0(faster with volatiles) or 1(faster with OS_SEMAPHORE)
 #define RUN_VIDEO_AS_TASK 0
@@ -49,7 +53,7 @@
 // If defined rotate display 180 deg
 #define ROTATE_LCD_180
 
-// Use DMA to transfer to screen if defined else use CPU (DMA and CPU are about equally fast...)
+// Use DMA to transfer to screen if defined else use CPU (DMA and CPU are about equally fast but CPU is lower latency)
 //#define USE_SPI_DMA
 
 // Turn on various debugging options
