@@ -2,8 +2,10 @@
 ## Supports classic NES/SNES/PSX controllers or raw GPIO buttons.
 
 ![NESEMU](extras/LCD.jpg)
+**NESEMU** Compiles with Arduino IDE framework and flash/upload the binary to an ESP32 (above WEMOS D1 mini).
 
-**NESEMU** uses the Arduino IDE framework to compile and flash/upload the binary to an ESP32 module (WEMOS D1 mini).
+![NESEMU](extras/ILI9143.png)
+**ILI9143** Info about the LCD.
 
 ```
      ---------
@@ -60,13 +62,9 @@ PSX ___________________
 ```
 
 ## Build
-The emulator is based on the nofrendo emulator (by Matthew Conte) which was ported to the ESP32 esp-idf framework by SpriteTM. Later versions from different people added various extras to the build.
-This version uses the code from various sources originating amoung others from "MittisBootloop" version and the build was then transfered to the Arduino IDE framework as a friendlier development platform.
-Note that this is still work in progress and not all features has been fully tested. Lot of effort went into getting the emulator to shift data fast through the SPI interface
-to the LCD to make it run as fast as possible (80MHz clock). The CPU (in a separate task) is just as fast as transfering data with DMA and has lower latency.
-There is options to stretch the screen along the X-axis to fill all 256->320 pixels, both interlace and progressive supports bilinear upscaling. Due to the larger amount
-of data streching will take longer to transfer to the LCD but for interlaced mode and SPI running at 80MHz it is still a viable option with 60fps refresh rate while progressive mode can potentially struggle. Pressing select and left simultaneously will bring up the in game menu while pressing select and start will do a reset. To get back to the ROM menu
-you'll need hit the reset button on your ESP32 module or power cycle.
+The emulator is based on the nofrendo emulator (by Matthew Conte) which was ported to the ESP32 esp-idf framework by SpriteTM. Later versions from different people added various extras to the build. This version uses the code from various sources originating amoung others from "MittisBootloop" version and the build was then transfered to the Arduino IDE framework as a friendlier development platform.
+Note that this is still work in progress and not all features has been fully tested. Lot of effort went into getting the emulator to shift data fast through the SPI interface to the LCD to make it run as fast as possible (80MHz clock). The CPU (in a separate task) is just as fast as transfering data with DMA and has lower latency.
+There is options to stretch the screen along the X-axis to fill all 256->320 pixels, both interlace and progressive supports bilinear upscaling. Due to the larger amount of data streching will take longer to transfer to the LCD but for interlaced mode and SPI running at 80MHz it is still a viable option with 60fps refresh rate while progressive mode can potentially struggle. Pressing select and left simultaneously will bring up the in game menu while pressing select and start will do a reset. To get back to the ROM menu you'll need hit the reset button on your ESP32 module or power cycle.
 
 ## Options
 The file config.h in the top directory contains a few options and settings as well as the ESP32 pin mapping. Note that the LCD needs to use the VSPI interface to work fast/properly, additionally there is an option to rotate the screen 180 deg.

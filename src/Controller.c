@@ -199,78 +199,24 @@ static void psxDone()
 #endif
 
 bool showMenu;
-bool getShowMenu()
-{
-  return showMenu;
-}
+bool getShowMenu() {return showMenu;}
 
-bool isSelectPressed(int ctl)
-{
-  return !(ctl & PSX_SELECT);
-}
-bool isStartPressed(int ctl)
-{
-  return !(ctl & PSX_START);
-}
-bool isUpPressed(int ctl)
-{
-  return !(ctl & PSX_UP);
-}
-bool isRightPressed(int ctl)
-{
-  return !(ctl & PSX_RIGHT);
-}
-bool isDownPressed(int ctl)
-{
-  return !(ctl & PSX_DOWN);
-}
-bool isLeftPressed(int ctl)
-{
-  return !(ctl & PSX_LEFT);
-}
-bool isAPressed(int ctl)
-{
-  return !(ctl & A_BUTTON);
-}
-bool isBPressed(int ctl)
-{
-  return !(ctl & B_BUTTON);
-}
-bool isTurboAPressed(int ctl)
-{
-  return !(ctl & TURBO_A_BUTTON);
-}
-bool isTurboBPressed(int ctl)
-{
-  return !(ctl & TURBO_B_BUTTON);
-}
-bool isMenuPressed(int ctl)
-{
-  return !(ctl & MENU_BUTTON);
-}
-bool isPowerPressed(int ctl)
-{
-  return !(ctl & POWER_BUTTON);
-}
-bool isAnyDirectionPressed(int ctl)
-{
-  return isUpPressed(ctl) || isDownPressed(ctl) || isLeftPressed(ctl) || isRightPressed(ctl);
-}
-
-bool isAnyActionPressed(int ctl)
-{
-  return isStartPressed(ctl) || isSelectPressed(ctl) || isMenuPressed(ctl) || isPowerPressed(ctl);
-}
-
-bool isAnyFirePressed(int ctl)
-{
-  return isAPressed(ctl) || isBPressed(ctl) || isTurboAPressed(ctl) || isTurboBPressed(ctl);
-}
-
-bool isAnyPressed(int ctl)
-{
-  return isAnyDirectionPressed(ctl) || isAnyActionPressed(ctl) || isAnyFirePressed(ctl);
-}
+bool isSelectPressed(int ctl) {return !(ctl & PSX_SELECT);}
+bool isStartPressed(int ctl) {return !(ctl & PSX_START);}
+bool isUpPressed(int ctl) {return !(ctl & PSX_UP);}
+bool isRightPressed(int ctl) {return !(ctl & PSX_RIGHT);}
+bool isDownPressed(int ctl) {return !(ctl & PSX_DOWN);}
+bool isLeftPressed(int ctl) {return !(ctl & PSX_LEFT);}
+bool isAPressed(int ctl) {return !(ctl & A_BUTTON);}
+bool isBPressed(int ctl) {return !(ctl & B_BUTTON);}
+bool isTurboAPressed(int ctl) {return !(ctl & TURBO_A_BUTTON);}
+bool isTurboBPressed(int ctl) {return !(ctl & TURBO_B_BUTTON);}
+bool isMenuPressed(int ctl) {return !(ctl & MENU_BUTTON);}
+bool isPowerPressed(int ctl) {return !(ctl & POWER_BUTTON);}
+bool isAnyDirectionPressed(int ctl) {return isUpPressed(ctl) || isDownPressed(ctl) || isLeftPressed(ctl) || isRightPressed(ctl);}
+bool isAnyActionPressed(int ctl) {return isStartPressed(ctl) || isSelectPressed(ctl) || isMenuPressed(ctl) || isPowerPressed(ctl);}
+bool isAnyFirePressed(int ctl) {return isAPressed(ctl) || isBPressed(ctl) || isTurboAPressed(ctl) || isTurboBPressed(ctl);}
+bool isAnyPressed(int ctl) {return isAnyDirectionPressed(ctl) || isAnyActionPressed(ctl) || isAnyFirePressed(ctl);}
 
 int turboACounter = 0;
 int turboBCounter = 0;
@@ -279,13 +225,8 @@ int turboBSpeed = 3;
 int MAX_TURBO = 6;
 int TURBO_COUNTER_RESET = 210;
 
-int getTurboA() {
-  return turboASpeed;
-}
-
-int getTurboB() {
-  return turboBSpeed;
-}
+int getTurboA() {return turboASpeed;}
+int getTurboB() {return turboBSpeed;}
 
 int ReadControllerInput()
 {
@@ -323,7 +264,7 @@ int ReadControllerInput()
   int Button = NES_poll();
   if (!((Button >> NES_UP) & 1))     b2b1 -= PSX_UP;
   if (!((Button >> NES_DOWN) & 1))   b2b1 -= PSX_DOWN;
-  if (!((Button >> NES_RIGHT) & 1)) b2b1 -= PSX_RIGHT;
+  if (!((Button >> NES_RIGHT) & 1))  b2b1 -= PSX_RIGHT;
   if (!((Button >> NES_LEFT) & 1))   b2b1 -= PSX_LEFT;
   if (!((Button >> NES_SELECT) & 1)) b2b1 -= PSX_SELECT;
   if (!((Button >> NES_START) & 1))  b2b1 -= PSX_START;
@@ -436,20 +377,9 @@ int ReadControllerInput()
   return b2b1;
 }
 
-int getBright()
-{
-  return bright;
-}
-
-int getVolume()
-{
-  return volume;
-}
-
-bool getShutdown()
-{
-  return shutdown;
-}
+int getBright() {return bright;}
+int getVolume() {return volume;}
+bool getShutdown() {return shutdown;}
 
 void initGPIO(int gpioNo)
 {
@@ -537,14 +467,6 @@ void ControllerInit()
 
 #else
 
-int ReadControllerInput()
-{
-  return 0xFFFF;
-}
-
-void ControllerInit()
-{
-  printf("Controller disabled in menuconfig; no input enabled.\n");
-}
-
+int ReadControllerInput() {return 0xFFFF;}
+void ControllerInit() {printf("Controller disabled in menuconfig; no input enabled.\n");}
 #endif
