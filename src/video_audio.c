@@ -39,11 +39,14 @@
 #include "Controller.h"
 #include "video_audio.h"
 
-#define AUDIO_SAMPLERATE 15734*2
+#ifdef PAL
+#define AUDIO_SAMPLERATE 15625
+#else
+#define AUDIO_SAMPLERATE 15732
+#endif
 #define AUDIO_BUFFER_LENGTH 64
-#define BITS_PER_SAMPLE 16
-// Always bits_per_sample / 8
-#define BYTES_PER_SAMPLE 2
+#define BITS_PER_SAMPLE 16 //Signed 16bit or unsigned 8bit
+#define BYTES_PER_SAMPLE BITS_PER_SAMPLE/8 // Always bits_per_sample / 8
 #define I2S_DEVICE_ID 0
 
 TimerHandle_t timer;
@@ -67,52 +70,6 @@ QueueHandle_t queue;
 static void *audio_buffer;
 #endif
 
-static void do_audio_frame()
-{
-
-#if defined(CONFIG_SOUND_ENABLED)
-	if (!audio_callback || getVolume() <= 0)
-	{
-		i2s_zero_dma_buffer(I2S_DEVICE_ID);
-		return;
-	}
-	uint16_t *bufU = (uint16_t *)audio_buffer;
-	int16_t *bufS = (int16_t *)audio_buffer;
-	int samplesRemaining = samplesPerPlayback;
-	int volShift = 8 - getVolume() * 2;	
-	while (samplesRemaining)
-	{
-		int n = AUDIO_BUFFER_LENGTH > samplesRemaining ? samplesRemaining : AUDIO_BUFFER_LENGTH;
-		apu_process(audio_buffer, n);
-		//if (audio_callback) audio_callback(audio_buffer, n);  //Why does this crash??
-		for (int i=0; i < n; i++) {
-			int16_t sample = bufS[i];
-			uint16_t unsignedSample = sample ^ 0x8000;
-			bufU[i] = unsignedSample >> volShift;
-		}
-		size_t written = -1;
-		i2s_write(I2S_DEVICE_ID, audio_buffer, BYTES_PER_SAMPLE * n, &written, portMAX_DELAY);
-		samplesRemaining -= n;
-	}
-#endif
-}
-
-void osd_setsound(void (*playfunc)(void *buffer, int length))
-{
-	//Indicates we should call playfunc() to get more data.
-	audio_callback = playfunc;
-}
-
-static void osd_stopsound(void)
-{
-#if defined(CONFIG_SOUND_ENABLED)
-	audio_callback = NULL;
-	printf("Sound stopped.\n");
-	i2s_stop(I2S_DEVICE_ID);
-	free(audio_buffer);
-#endif
-}
-
 static int osd_init_sound(void)
 {
 #if defined(CONFIG_SOUND_ENABLED)
@@ -133,7 +90,6 @@ static int osd_init_sound(void)
 	i2s_set_sample_rates(I2S_DEVICE_ID, AUDIO_SAMPLERATE);
 	samplesPerPlayback = AUDIO_SAMPLERATE / NES_REFRESH_RATE;
 	printf("Finished initializing sound\n");
-
 #endif
 
 	audio_callback = NULL;
@@ -141,10 +97,53 @@ static int osd_init_sound(void)
 	return 0;
 }
 
+static void osd_stopsound(void)
+{
+#if defined(CONFIG_SOUND_ENABLED)
+	audio_callback = NULL;
+	printf("Sound stopped.\n");
+	i2s_stop(I2S_DEVICE_ID);
+	free(audio_buffer);
+#endif
+}
+
 void osd_getsoundinfo(sndinfo_t *info)
 {
 	info->sample_rate = AUDIO_SAMPLERATE;
 	info->bps = BITS_PER_SAMPLE;  // Internal DAC is only 8-bit anyway
+}
+
+void osd_setsound(void (*playfunc)(void *buffer, int length))
+{
+	//Indicates we should call playfunc() to get more data.
+	audio_callback = playfunc;
+}
+
+static void do_audio_frame()
+{
+#if defined(CONFIG_SOUND_ENABLED)
+	if (!audio_callback || getVolume() <= 0)
+	{
+		i2s_zero_dma_buffer(I2S_DEVICE_ID);
+		return;
+	}
+	uint16_t *bufU = (uint16_t *)audio_buffer;
+	int16_t *bufS = (int16_t *)audio_buffer;
+	int samplesRemaining = samplesPerPlayback;
+	int volShift = 8 - getVolume() * 2;	
+	while (samplesRemaining)
+	{
+		int n = AUDIO_BUFFER_LENGTH > samplesRemaining ? samplesRemaining : AUDIO_BUFFER_LENGTH;
+		apu_process(audio_buffer, n);
+		//if (audio_callback) audio_callback(audio_buffer, n);  //Why does this crash??
+		for (int i=0; i < n; i++) {
+			bufU[i] = (uint16_t)(bufS[i] >> volShift) ^ 0x8000;
+		}
+		size_t written = -1;
+		i2s_write(I2S_DEVICE_ID, audio_buffer, BYTES_PER_SAMPLE * n, &written, portMAX_DELAY);
+		samplesRemaining -= n;
+	}
+#endif
 }
 
 /*

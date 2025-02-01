@@ -4,9 +4,11 @@
 ![NESEMU](extras/LCD.jpg)
 **NESEMU** Compiles with Arduino IDE framework and flash/upload the binary to an ESP32 (above WEMOS D1 mini).
 
-![NESEMU](extras/ILI9143.png)
-**ILI9143** Info about the LCD.
+![NESEMU](extras/ILI9341.png)
+**ILI9341** Info about the LCD.
 
+![NESEMU](extras/HAT_SPK.PNG)
+**M5StickC** Speaker Hat (PAM8303) has a bug that makes it very noisy and can be fixed with some fly leads.
 ```
      ---------
     |      25 |--------> audio out

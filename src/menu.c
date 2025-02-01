@@ -255,17 +255,21 @@ void lcd_init(spi_device_handle_t spi)
 
     //Initialize non-SPI GPIOs
     gpio_set_direction(PIN_NUM_DC, GPIO_MODE_OUTPUT);
+#if PIN_NUM_RST >= 0
     gpio_set_direction(PIN_NUM_RST, GPIO_MODE_OUTPUT);
+#endif
     //PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[27], PIN_FUNC_GPIO);
-    #if PIN_NUM_BCKL >= 0
+#if PIN_NUM_BCKL >= 0
     gpio_set_direction(PIN_NUM_BCKL, GPIO_MODE_OUTPUT);
-    #endif
+#endif
 
     //Reset the display
+#if PIN_NUM_RST >= 0
     gpio_set_level(PIN_NUM_RST, 0);
     vTaskDelay(100 / portTICK_RATE_MS);
     gpio_set_level(PIN_NUM_RST, 1);
     vTaskDelay(100 / portTICK_RATE_MS);
+#endif
 
     //detect LCD type
     uint32_t lcd_id = lcd_get_id(spi);
@@ -468,19 +472,26 @@ void initBl()
 
 void setBr(int bright)
 {
-    int duty = 1000;
-    if (bright == -2)
-        duty = 0;
-    if (bright == 0)
-        duty = 1;
-    if (bright == 1)
-        duty = 2;
-    if (bright == 2)
-        duty = 3;
-    if (bright == 3)
-        duty = 4;
-    if (bright == 4)
-        duty = 5;
+    int duty;
+	
+    switch (bright)
+	{
+		case -2:
+			duty = 0; break;
+		case 0:
+			duty = 1; break;
+		case 1:
+			duty = 2; break;
+		case 2:
+			duty = 3; break;
+		case 3:
+			duty = 4; break;
+		case 4:
+			duty = 5; break;
+		default:
+			duty = 1000;
+	}
+	
     #if PIN_NUM_BCKL >= 0
     ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, duty);
     ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);

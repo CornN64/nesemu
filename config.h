@@ -1,5 +1,5 @@
 //Config file for ESP32 NES emulator Corn 2020
-#pragma GCC optimize ("O2")
+#pragma GCC optimize ("Os")
 #pragma once 
 
 //Setting FreeRTOS sheduler to 300Hz
@@ -21,9 +21,12 @@
 //#define PAL
 
 //Define to skip menu
-//#define SKIP_MENU   
+//#define SKIP_MENU
 
-// Sound Settings, Note: Do not assign anything else to pins 25 or 26, those are used by I2S
+//Define and it will directly boot the ROM from the list
+//#define BOOT_ROM 0
+
+// Sound Settings, Note: DO NOT assign anything else to pins 25 or 26, those are used by I2S
 #define CONFIG_SOUND_ENABLED
 
 //LCD SPI transfer clock rate. With short leads to the display it is possible to run the display at 80MHz however here you can opt to run it slower
@@ -41,8 +44,8 @@
 #define BILINEAR
 
 //Allowing all 64 sprites on a scan line will remove flicker and work on most games
-//#define NES_MAX_SPRITES 8 //Default max sprites on a scan line
-#define NES_MAX_SPRITES 64 //Hack to removing NES sprite limitation
+//#define NES_MAX_SPRITES 8 // 8 is the default max sprites on a scan line
+#define NES_MAX_SPRITES 64 // Hack to removing NES sprite limitation
 
 // If defined it will run the SPI transfer to the LCD as a separate task and the value indicates which CPU core 0(faster with volatiles) or 1(faster with OS_SEMAPHORE)
 #define RUN_VIDEO_AS_TASK 0
@@ -53,35 +56,32 @@
 // If defined rotate display 180 deg
 #define ROTATE_LCD_180
 
-// Use DMA to transfer to screen if defined else use CPU (DMA and CPU are about equally fast but CPU is lower latency)
+// If defined use DMA to transfer to screen else use CPU (DMA and CPU are about equally fast but CPU is lower latency)
 //#define USE_SPI_DMA
 
-// Turn on various debugging options
+// Turn on various outputs for debugging
 //#define NOFRENDO_DEBUG
 //#define MEMORY_DEBUG
 //#define MAPPER_DEBUG
 //#define SHOW_SPI_TRANSFER_TIME	//in micro seconds
-//#define SHOW_RENDER_VIDEO_TIME	//in micro seconds
+//#define SHOW_RENDER_VIDEO_TIME	//render & SPI in micro seconds
 
-//Define and it will directly boot the ROM from the list
-//#define BOOT_ROM 0   
-
-// LCD Settings using VSPI bus
+// LCD Settings using VSPI bus (a must for 80MHz operation)
 // LCD pin mapping
-#define CONFIG_HW_LCD_RESET_GPIO 0
-#define CONFIG_HW_LCD_CS_GPIO 5
+#define CONFIG_HW_LCD_RESET_GPIO -1 //Define IO pin for LCD reset (-1 = disabled)
+#define CONFIG_HW_LCD_BL_GPIO -1 //Define IO pin for PWM back lite LED (-1 = disabled)
 #define CONFIG_HW_LCD_DC_GPIO 2
-#define CONFIG_HW_LCD_MOSI_GPIO 23
+#define CONFIG_HW_LCD_CS_GPIO 5
 #define CONFIG_HW_LCD_CLK_GPIO 18
 #define CONFIG_HW_LCD_MISO_GPIO 19
-#define CONFIG_HW_LCD_BL_GPIO -1
+#define CONFIG_HW_LCD_MOSI_GPIO 23
 
-// SD card pin mapping
+// SD card pin mapping (Flash card)
 #define CONFIG_SD_CARD
-#define CONFIG_SD_CS 15
+#define CONFIG_SD_MISO 12
 #define CONFIG_SD_MOSI 13
 #define CONFIG_SD_SCK 14
-#define CONFIG_SD_MISO 12
+#define CONFIG_SD_CS 15
 
 //----------------------------------
 //Enable only one controller type!!!

@@ -460,8 +460,9 @@ void ControllerInit()
   }
 #endif
 
+  // Startup volume/brightness
   inpDelay = 0;
-  volume = 3;
+  volume = 2;
   bright = 4;
 }
 
