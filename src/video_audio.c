@@ -40,9 +40,9 @@
 #include "video_audio.h"
 
 #ifdef PAL
-#define AUDIO_SAMPLERATE 15625
+#define AUDIO_SAMPLERATE 2*15625
 #else
-#define AUDIO_SAMPLERATE 15732
+#define AUDIO_SAMPLERATE 2*15732
 #endif
 #define AUDIO_BUFFER_LENGTH 64
 #define BITS_PER_SAMPLE 16 //Signed 16bit or unsigned 8bit
